@@ -19,7 +19,6 @@ class TypeController extends Controller
      */
     public function index() {
         $user = Auth::user();
-$user->is_admin=TRUE; //to remove for production
         return response()-> json(['message' => 'Request executed successfully', 'Type'=>Type::all()],200);
 //        return response()->json(['data'=>$users], 200);
     }
@@ -33,7 +32,6 @@ $user->is_admin=TRUE; //to remove for production
 public function store(CreateTypeRequest $request)
     {
         $user = Auth::user();
-$user->is_admin=TRUE; //to be deleted in production        
         if (!$user->is_admin){
             return response()->json(['message'=>'Only administrators can create a new type', 'code'=>403],403);
         }
@@ -65,7 +63,6 @@ $user->is_admin=TRUE; //to be deleted in production
     public function update(Request $request, Type $type)
     {   
         $logon_user = Auth::user();
-$logon_user->is_admin = TRUE; //to be deleted for live, this makes everyone admin
         if ($logon_user->id != $type->user_id && !$logon_user->is_admin) {            
             return response()->json(['message' => 'You have no access rights to update type','code'=>401], 401);     
         }
@@ -84,7 +81,6 @@ $logon_user->is_admin = TRUE; //to be deleted for live, this makes everyone admi
     public function destroy(Type $type)
     {
         $logon_user = Auth::user();
-$logon_user->is_admin = TRUE; //to be deleted for live, this makes everyone admin
         if ($logon_user->id != $type->user_id && !$logon_user->is_admin) {            
             return response()->json(['message' => 'You have no access rights to delete type','code'=>401], 401);
         } 

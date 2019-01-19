@@ -101,7 +101,7 @@ class HouseController extends Controller
         } 
      //enrol user to the house in house_role_user
         $house->fill($request->except('image'))->save();
-        $house->tracks()->sync($request->tracks, false);
+        $house->tracks()->sync($request->tracks);
         return response()->json(['message'=>$house->house.' updated successful', 'class'=>$house, 'code'=>201], 201);
     }
 
