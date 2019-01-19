@@ -28,7 +28,6 @@ class SkillController extends Controller
 
     public function create(){
         $user=Auth::user();
-$user->is_admin=TRUE;
         $public_tracks = $user->is_admin ? null: Track::whereStatusId(3)->select('id','track')->get();
         $my_tracks = $user->is_admin? Track::select('id','track')->get():$user->tracks()->select('id','track')->get();
 
@@ -44,7 +43,6 @@ $user->is_admin=TRUE;
     public function store(CreateSkillRequest $request)
     {
         $user = Auth::user();
-$user->is_admin=TRUE; //to be deleted in productions
 
         $track_id = $request->track_id;
 
@@ -77,7 +75,6 @@ $user->is_admin=TRUE; //to be deleted in productions
     public function update(CreateSkillRequest $request, Skill $skill)
     {
         $logon_user = Auth::user();
-$logon_user->is_admin = TRUE; //to be deleted for live, this makes everyone admin
         if ($logon_user->id != $skill->user_id && !$logon_user->is_admin) {            
             return response()->json(['message' => 'You have no access rights to update skill','code'=>401], 401);     
         }

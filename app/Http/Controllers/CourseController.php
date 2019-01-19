@@ -24,7 +24,7 @@ class CourseController extends Controller
     public function index()
     {
         return $courses = Course::with('tracks.skills','houses.created_by')->get();
-        return response()-> json(['message' => 'Request executed successfully', 'courses'=>Course::all()],200);
+        return response()-> json(['message' => 'Request executed successfully', 'courses'=>$courses],200);
     }
     /**
      * Display a listing of the resource.
@@ -62,7 +62,6 @@ class CourseController extends Controller
     public function store(Request $request)
     {
         $user = Auth::user();
-$user->is_admin=TRUE; //to be deleted in production        
         if (!$user->is_admin){
             return response()->json(['message'=>'Only administrators can create a new courses', 'code'=>403],403);
         }
@@ -113,7 +112,6 @@ $user->is_admin=TRUE; //to be deleted in production
     public function update(Request $request, Course $course)
     {   
         $logon_user = Auth::user();
-$logon_user->is_admin = TRUE; //to be deleted for live, this makes everyone admin
         if ($logon_user->id != $course->user_id && !$logon_user->is_admin) {            
             return response()->json(['message' => 'You have no access rights to update course','code'=>401], 401);     
         }
