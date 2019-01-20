@@ -22,8 +22,7 @@ class TrackUser extends Model
      *
      * @var array
      */
-    protected $hidden = ['password', 'remember_token'];
-
+ 
     // make dates carbon so that carbon google that out
     protected $dates = ['last_quiz_date'];
 

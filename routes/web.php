@@ -9,9 +9,7 @@
 | to using a Closure or controller method. Build something great!
 |
 */
-Route::get('/', function () {
-    return view('welcome');
-});
+
 
 Route::get('opencourses', 'CourseController@open');
 Route::get('leaders', 'DashboardController@leaders');

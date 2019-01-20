@@ -15,7 +15,6 @@ use App\Http\Requests\UpdateRequest;
 class CourseTrackController extends Controller
 {
     public function __construct(){
-        $this->middleware('auth0.jwt');
     }
 
     /**

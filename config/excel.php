@@ -1,6 +1,6 @@
 <?php
 
-use Maatwebsite\Excel\Excel;
+//use Maatwebsite\Excel\Excel;
 
 return [
     'exports' => [
@@ -81,7 +81,7 @@ return [
     | based on the extension alone.
     |
     */
-    'extension_detector' => [
+/*    'extension_detector' => [
         'xlsx'     => Excel::XLSX,
         'xlsm'     => Excel::XLSX,
         'xltx'     => Excel::XLSX,
@@ -107,6 +107,6 @@ return [
         | Available options: Excel::MPDF | Excel::TCPDF | Excel::DOMPDF
         |
         */
-        'pdf'      => Excel::DOMPDF,
-    ],
+//        'pdf'      => Excel::DOMPDF,
+ //   ],
 ];
