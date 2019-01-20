@@ -98,7 +98,6 @@ class CourseHouseController extends Controller
     public function update(Course $course, Request $request)
     {
         $logon_user = Auth::user();
-$logon_user->is_admin = TRUE; //to be deleted for live, this makes everyone admin
         if ($logon_user->id != $course->user_id && !$logon_user->is_admin) {            
             return response()->json(['message' => 'You have no access rights to update course','code'=>401], 401);     
         }

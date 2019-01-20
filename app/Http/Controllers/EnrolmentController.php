@@ -25,7 +25,6 @@ class EnrolmentController extends Controller
      */
     public function index() {
         $user = Auth::user();
-$user->is_admin=TRUE; //to remove for production
         return $user->is_admin ? response()->json(['house'=>House::with('enrolment.roles')->with('enrolment.users.enrolment.roles')->get(),'message'=>'Enrolment retrieved']) : response()->json(['message' =>'Not authorized to view enrolment details', 'code'=>401], 401);
 
 //        return response()->json(['data'=>$users], 200);

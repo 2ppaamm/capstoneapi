@@ -15,7 +15,6 @@ use Auth;
 class SkillQuestionsController extends Controller
 {
     public function __construct(){
-        $this->middleware('auth0.jwt');
     }
     
     /**

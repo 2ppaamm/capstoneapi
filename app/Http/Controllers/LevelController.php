@@ -24,7 +24,6 @@ class LevelController extends Controller
     public function index()
     {
         $user = Auth::user();
-$user->is_admin=TRUE; //to remove for production
         return response()-> json(['message' => 'Request executed successfully', 'levels'=>Level::all()],200);
 
         //return response()->json(['levels'=>$levels],200);
@@ -39,7 +38,6 @@ $user->is_admin=TRUE; //to remove for production
     public function store(CreateLevelRequest $request)
     {
         $user = Auth::user();
-$user->is_admin=TRUE; //to be deleted in production        
         if (!$user->is_admin){
             return response()->json(['message'=>'Only administrators can create a new level', 'code'=>403],403);
         }
@@ -71,7 +69,6 @@ $user->is_admin=TRUE; //to be deleted in production
     public function update(Request $request, Level $level)
     {   
         $logon_user = Auth::user();
-$logon_user->is_admin = TRUE; //to be deleted for live, this makes everyone admin
         if ($logon_user->id != $level->user_id && !$logon_user->is_admin) {            
             return response()->json(['message' => 'You have no access rights to update level','code'=>401], 401);     
         }
@@ -90,7 +87,6 @@ $logon_user->is_admin = TRUE; //to be deleted for live, this makes everyone admi
     public function destroy(Level $level)
     {
         $logon_user = Auth::user();
-$logon_user->is_admin = TRUE; //to be deleted for live, this makes everyone admin
         if ($logon_user->id != $level->user_id && !$logon_user->is_admin) {            
             return response()->json(['message' => 'You have no access rights to delete level','code'=>401], 401);
         } 

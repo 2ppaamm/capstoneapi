@@ -142,7 +142,6 @@ class QuestionController extends Controller
 //            return response()->json(['message'=> 'Access denied. You are not authorized to modify this question.', 'code'=>403],403);
 //        }
         $user = Auth::user();
-$user->is_admin = TRUE; //make everyone admin to delete at live
         if ($question->user_id != $user->id && !$user->is_admin) {
             return response()->json(['message'=> 'Access denied. You are not authorized to modify this question.', 'code'=>403],403);
         }

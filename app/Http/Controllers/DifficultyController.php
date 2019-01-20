@@ -19,7 +19,6 @@ class DifficultyController extends Controller
      */
     public function index() {
         $user = Auth::user();
-$user->is_admin=TRUE; //to remove for production
         return response()-> json(['message' => 'Request executed successfully', 'difficulties'=>Difficulty::all()],200);
 //        return response()->json(['data'=>$users], 200);
     }
@@ -33,7 +32,6 @@ $user->is_admin=TRUE; //to remove for production
 public function store(CreateDifficultyRequest $request)
     {
         $user = Auth::user();
-$user->is_admin=TRUE; //to be deleted in production        
         if (!$user->is_admin){
             return response()->json(['message'=>'Only administrators can create a new difficulty', 'code'=>403],403);
         }
@@ -66,7 +64,6 @@ $user->is_admin=TRUE; //to be deleted in production
     public function update(Request $request, Difficulty $difficulty)
     {   
         $logon_user = Auth::user();
-$logon_user->is_admin = TRUE; //to be deleted for live, this makes everyone admin
         if ($logon_user->id != $difficulty->user_id && !$logon_user->is_admin) {            
             return response()->json(['message' => 'You have no access rights to update difficulty','code'=>401], 401);     
         }
@@ -85,7 +82,6 @@ $logon_user->is_admin = TRUE; //to be deleted for live, this makes everyone admi
     public function destroy(Difficulty $difficulty)
     {
         $logon_user = Auth::user();
-$logon_user->is_admin = TRUE; //to be deleted for live, this makes everyone admin
         if ($logon_user->id != $difficulty->user_id && !$logon_user->is_admin) {            
             return response()->json(['message' => 'You have no access rights to delete difficulty','code'=>401], 401);
         } 

@@ -21,7 +21,6 @@ class RoleController extends Controller
     public function index()
     {
         $user = Auth::user();
-$user->is_admin=TRUE; //to remove for production
         return response()-> json(['message' => 'Request executed successfully', 'roles'=>Role::all()],200);
 
         //return response()->json(['levels'=>$levels],200);
@@ -36,7 +35,6 @@ $user->is_admin=TRUE; //to remove for production
     public function store(CreateRoleRequest $request)
     {
         $user = Auth::user();
-$user->is_admin=TRUE; //to be deleted in production        
         if (!$user->is_admin){
             return response()->json(['message'=>'Only administrators can create a new role', 'code'=>403],403);
         }
@@ -68,7 +66,6 @@ $user->is_admin=TRUE; //to be deleted in production
     public function update(Request $request, Role $role)
     {   
         $logon_user = Auth::user();
-$logon_user->is_admin = TRUE; //to be deleted for live, this makes everyone admin
         if ($logon_user->id != $role->user_id && !$logon_user->is_admin) {            
             return response()->json(['message' => 'You have no access rights to update role','code'=>401], 401);     
         }
@@ -87,7 +84,6 @@ $logon_user->is_admin = TRUE; //to be deleted for live, this makes everyone admi
     public function destroy(Role $role)
     {
         $logon_user = Auth::user();
-$logon_user->is_admin = TRUE; //to be deleted for live, this makes everyone admin
         if (!$logon_user->is_admin) {            
             return response()->json(['message' => 'You have no access rights to delete role','code'=>401], 401);
         } 

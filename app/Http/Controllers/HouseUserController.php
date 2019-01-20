@@ -17,7 +17,6 @@ use App\Role;
 class HouseUserController extends Controller
 {
     public function __construct(){
-        $this->middleware('auth0.jwt');
 }
     /**
      * Display a listing of the resource.
