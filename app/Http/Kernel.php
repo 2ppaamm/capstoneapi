@@ -27,7 +27,7 @@ class Kernel extends HttpKernel
      * @var array
      */
     protected $routeMiddleware = [
-
+        'cors' => \App\Http\Middleware\Cors::class,
         'auth' => \App\Http\Middleware\Authenticate::class,
         'auth.basic' => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
         'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
@@ -35,7 +35,6 @@ class Kernel extends HttpKernel
         'oauth-user' => \LucaDegasperi\OAuth2Server\Middleware\OAuthUserOwnerMiddleware::class,
         'oauth-client' => \LucaDegasperi\OAuth2Server\Middleware\OAuthClientOwnerMiddleware::class,
         'check-authorization-params' => \LucaDegasperi\OAuth2Server\Middleware\CheckAuthCodeRequestMiddleware::class,
-        'auth0.jwt' => \App\Http\Middleware\Auth0JWTMiddleware::class,
-        'cors' => \App\Http\Middleware\Cors::class
+        'auth0.jwt' => \App\Http\Middleware\Auth0JWTMiddleware::class
         ];
 }
