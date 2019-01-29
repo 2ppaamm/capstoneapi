@@ -46,23 +46,24 @@ class QuestionController extends Controller
         $questions = null;
         if ($request->skill){
             $questions = Cache::remember('questions', 15/60, function() use ($request) {
-            return Question::whereSkillId($request->skill)->with('solutions','author','difficulty', 'skill.tracks.level','skill.tracks.field','type','status')->get();
+            return Question::whereSkillId($request->skill)->with('solutions','author','difficulty', 'skill.tracks.level','skill.tracks.field','type','status')->simplePaginate(20);
                 });
+
         }
         if ($request->level){
             $questions = Cache::remember('questions',15/60, function() use ($request){
             return Question::with('solutions','author','difficulty', 'skill.tracks.level','skill.tracks.field','type','status')->whereIn('skill_id', Skill::whereHas('tracks', function ($query) use ($request) {
                        $query->whereIn('id', \App\Level::find($request->level)->tracks()->pluck('id')->toArray());
-                        })->pluck('id')->toArray())->get();
+                        })->pluck('id')->toArray())->simplePaginate(20);
 
             });
         }
         if ($request->keyword){
             $questions = Cache::remember('questions',15/60, function() use ($request){
-            return Question::with('solutions','author','difficulty', 'skill.tracks.level','skill.tracks.field','type','status')->where('question','LIKE','%'.$request->keyword.'%')->get();});
+            return Question::with('solutions','author','difficulty', 'skill.tracks.level','skill.tracks.field','type','status')->where('question','LIKE','%'.$request->keyword.'%')->simplePaginate(20);
+            });
         }
-
-        return response()->json(['questions'=>$questions], 200);
+        return response()->json(['next'=>$questions->nextPageUrl(), 'previous'=>$questions->previousPageUrl(),'questions'=>$questions->items()], 200);
     }
 
 
