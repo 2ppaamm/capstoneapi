@@ -23,6 +23,7 @@ use Mail;
 class DiagnosticController extends Controller
 {
     public function __construct(){
+//	$this->middleware('cors');
     }
 
     /**

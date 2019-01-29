@@ -36,5 +36,5 @@ class Kernel extends HttpKernel
         'oauth-client' => \LucaDegasperi\OAuth2Server\Middleware\OAuthClientOwnerMiddleware::class,
         'check-authorization-params' => \LucaDegasperi\OAuth2Server\Middleware\CheckAuthCodeRequestMiddleware::class,
         'auth0.jwt' => \App\Http\Middleware\Auth0JWTMiddleware::class
-        ];
+    ];
 }

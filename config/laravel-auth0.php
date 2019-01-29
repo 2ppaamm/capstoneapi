@@ -40,7 +40,7 @@ return array(
     |
     */
 
-     'redirect_uri'  => 'http://localhost/api/protected',
+     'redirect_uri'  => 'https://mathapi.pamelalim.me/api/protected',
 
     /*
     |--------------------------------------------------------------------------
