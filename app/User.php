@@ -135,7 +135,10 @@ class User extends Model implements AuthenticatableContract,
 
     public function enrolclass($user_maxile){
         $houses = House::whereIn('course_id',Course::where('start_maxile_score','<=' ,round($user_maxile/100)*100)->pluck('id'))->pluck('id')->all();
-        $this->houseRoles()->sync($houses,false);
+        foreach ($houses as $house) {
+            $houses_id[$house]=['role_id'=>6];
+        }
+        $this->roleHouse()->syncWithoutDetaching($houses_id, false);
         return 'enrolment created';
     }
 
