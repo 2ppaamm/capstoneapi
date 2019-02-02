@@ -138,7 +138,7 @@ class User extends Model implements AuthenticatableContract,
         foreach ($houses as $house) {
             $houses_id[$house]=['role_id'=>6];
         }
-        $this->roleHouse()->syncWithoutDetaching($houses_id, false);
+        $this->roleHouse()->syncWithoutDetaching(1, false);
         return 'enrolment created';
     }
 
