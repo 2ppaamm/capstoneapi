@@ -61,7 +61,7 @@ class DiagnosticController extends Controller
           return response()->json(['message'=>'Already enrolled in course', "code"=>404], 404);  
         }
         $check_mastercode = Enrolment::whereMastercode($request->mastercode)->first();
-        if (!$check_mastercode) return response()->json(['message'=>'Your mastercode is wrong.', 'code'=>404], 404);
+        if (!$check_mastercode) return response()->json(['message'=>'Invalid credentials. Please contact us at info.allgifted@gmail.com if you have purchased product.', 'code'=>404], 404);
         if ($check_mastercode->places_alloted) {
 //            $date = new DateTime('now');
             $houses = \App\House::find($check_mastercode->house_id);
