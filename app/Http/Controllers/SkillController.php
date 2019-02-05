@@ -86,7 +86,7 @@ class SkillController extends Controller
 
         foreach ($request->track_ids as $track_id) {
            $track = Track::find($track_id);
-           $skill->tracks()->sync($request->track_ids,['skill_order'=>$track->maxSkill($track)? $track->maxSkill($track)->skill_order + 1:1], FALSE);
+           $skill->tracks()->sync($track_id,['skill_order'=>$track->maxSkill($track)? $track->maxSkill($track)->skill_order + 1:1], FALSE);
         }
 
         $skill->fill($request->except('lesson_link','track_id'))->save();

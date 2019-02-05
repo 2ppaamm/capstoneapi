@@ -35,7 +35,7 @@ class TrackController extends Controller
         $public_tracks = $user->is_admin ? Track::select('id','track'):Track::whereStatusId(3)->select('id','track')->get();
         $my_tracks = $user->tracks()->select('id','track')->get();
 
-        return response()->json(['message'=>'Fields for create track fetched.','levels'=> \App\Level::select('id','level','description')->get(), 'statuses'=>\App\Status::select('id','status','description')->get(),'fields'=>\App\Field::select('id','field','description')->get(), 'my_tracks'=>$my_tracks, 'public_tracks'=>$public_tracks,'code'=>200], 200);
+        return response()->json(['message'=>'Fields for create track fetched.','levels'=> \App\Level::select('id','level','description')->get(), 'statuses'=>\App\Status::select('id','status','description')->get(),'fields'=>\App\Field::select('id','field','description')->get(), 'my_tracks'=>$my_tracks, 'public_tracks'=>$public_tracks,'skills'=>\App\Skill::select('id','skill','description')->get(),'code'=>200], 200);
     }
 
     /**
@@ -50,9 +50,13 @@ class TrackController extends Controller
         if (!$user->is_admin){
             return response()->json(['message'=>'Only administrators can create a new courses', 'code'=>403],403);
         }
-        $values = $request->all();
+        $values = $request->except('skill_ids');
         $values['user_id'] = $user->id;
         $track = Track::create($values);
+        foreach ($request->skill_ids as $skill_id) {
+           $skill = \App\Skill::find($skill_id);
+           $skill->tracks()->sync($track->id,['skill_order'=>$track->maxSkill($track)? $track->maxSkill($track)->skill_order + 1:1], FALSE);
+        }
         return response()->json(['message' => 'Track correctly added.', 'track'=>$track,'code'=>201]);
     }
 
@@ -101,9 +105,12 @@ class TrackController extends Controller
         if ($logon_user->id != $tracks->user_id && !$logon_user->is_admin) {            
             return response()->json(['message' => 'You have no access rights to delete track','code'=>401], 401);   
         }  
-        if(sizeof($tracks->skills) > 0 || sizeof($tracks->courses)>0 || sizeof($tracks->houses)>0)
-        {
-            return response()->json(['message'=>'There are skills or this track belongs to a course or class. Delink them first.'], 409);
+    return $tracks;
+        if(sizeof($tracks->skills) > 0){
+            return response()->json(['message'=>'There are skills belonging to this track. Do you want to delink them?','code'=>'delink_skills'], 409);            
+        }
+        if(sizeof($tracks->courses)>0 || sizeof($tracks->houses)>0){
+            return response()->json(['message'=>'This track belongs to a class or course. You will need to go to the course or class to delink them first','classes'=>$tracks->houses, 'courses'=>$tracks->courses,'code'=>409], 409);
         }
         $tracks->delete();
         return response()->json(['message'=>'Track has been deleted.'], 200);
