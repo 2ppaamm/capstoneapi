@@ -32,10 +32,10 @@ class TrackController extends Controller
 
     public function create(){
         $user=Auth::user();
-        $public_tracks = $user->is_admin ? Track::all()->select('id','track'):Track::whereStatusId(3)->select('id','track')->get();
+        $public_tracks = $user->is_admin ? Track::select('id','track'):Track::whereStatusId(3)->select('id','track')->get();
         $my_tracks = $user->tracks()->select('id','track')->get();
 
-        return response()->json(['levels'=> \App\Level::select('id','level','description')->get(), 'statuses'=>\App\Status::select('id','status','description')->get(),'fields'=>\App\Field::select('id','field','description')->get(), 'my_tracks'=>$my_tracks, 'public_tracks'=>$public_tracks]);
+        return response()->json(['message'=>'Fields for create track fetched.','levels'=> \App\Level::select('id','level','description')->get(), 'statuses'=>\App\Status::select('id','status','description')->get(),'fields'=>\App\Field::select('id','field','description')->get(), 'my_tracks'=>$my_tracks, 'public_tracks'=>$public_tracks,'code'=>200], 200);
     }
 
     /**
@@ -47,22 +47,13 @@ class TrackController extends Controller
     public function store(CreateTrackRequest $request)
     {
         $user = Auth::user();
-        $house_id = $request->house_id;
-        $track = Track::firstOrCreate(['track'=>$request->track,'description'=>$request->description, 'level_id'=>$request->level_id, 'status_id'=>$request->status_id, 'field_id'=>$request->field_id, 'user_id'=>$user->id]);
-
-        //connect skills as well
-        $skills = Track::whereTrack($track->track)->first()->skills;
-        for ($i=0; $i<sizeof($skills); $i++) {
-            $track->skills()->attach($skills[$i],['skill_order'=>$skills[$i]->pivot->skill_order]);
+        if (!$user->is_admin){
+            return response()->json(['message'=>'Only administrators can create a new courses', 'code'=>403],403);
         }
-
-        $houses = \App\House::findorfail($house_id);
-        if ($houses) {
-           $houses->tracks()->syncWithoutDetaching($track->id,['track_order'=>$houses->maxTrack($houses->id)? $houses->maxTrack($houses->id)->track_order + 1:1]);
-        }
-
-        $new_track = Track::whereId($track->id)->with(['field','level','status','owner','skills'])->first();
-        return response()->json(['message' => 'Track correctly added and attached.', 'track'=>$new_track,'code'=>201]);
+        $values = $request->all();
+        $values['user_id'] = $user->id;
+        $track = Track::create($values);
+        return response()->json(['message' => 'Track correctly added.', 'track'=>$track,'code'=>201]);
     }
 
     /**
@@ -107,7 +98,7 @@ class TrackController extends Controller
     public function destroy(Track $tracks)
     {
         $logon_user = Auth::user();
-        if ($logon_user->id != $track->user_id && !$logon_user->is_admin) {            
+        if ($logon_user->id != $tracks->user_id && !$logon_user->is_admin) {            
             return response()->json(['message' => 'You have no access rights to delete track','code'=>401], 401);   
         }  
         if(sizeof($tracks->skills) > 0 || sizeof($tracks->courses)>0 || sizeof($tracks->houses)>0)

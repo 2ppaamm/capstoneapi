@@ -104,4 +104,9 @@ class TrackSkillController extends Controller
         return response()->json(['message'=>'Skill has been removed from this track.', 'skills'=>$track->skills()->with('user')->get(), 'code'=>201], 201);
     }
 
+    public function deleteAll(Track $track){
+        $track->skills()->detach();
+        return response()->json(['message'=>'All skills are deleted','track'=>$track, 'code'=>201],201);
+    }
+
 }

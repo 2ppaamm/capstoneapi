@@ -13,6 +13,10 @@ class Course extends Model
     	return $this->hasMany(House::class);
     }
 
+    public function validHouses(){
+        return $this->houses()->where('end_date','>',date("Y/m/d"));
+    }
+
     public function created_by() {                        //who created this course
         return $this->belongsTo(User::class, 'user_id');
     }

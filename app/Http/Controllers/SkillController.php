@@ -43,10 +43,12 @@ class SkillController extends Controller
     public function store(CreateSkillRequest $request)
     {
         $user = Auth::user();
-
-        $track_id = $request->track_id;
-
-        $skill = Skill::firstOrCreate(['skill'=>$request->skill,'description'=>$request->description, 'status_id'=>$request->status_id, 'user_id'=>$user->id]);
+        if (!$user->is_admin){
+            return response()->json(['message'=>'Only administrators can create a new skills', 'code'=>403],403);
+        }
+        $values = $request->all();
+        $values['user_id'] = $user->id;
+        $skill = Skill::create($values);
         if ($request->hasFile('lesson_link')) {
             $timestamp = time();
             $skill->lesson_link = 'videos/skills/'.$timestamp.'.mp4';
@@ -55,14 +57,9 @@ class SkillController extends Controller
 
             $skill->save();
         }
+        $skill->tracks()->sync($request->track_ids, FALSE);
+        return response()->json(['message' => 'Skill correctly added.', 'skill'=>$skill,'code'=>201]);
 
-        $track = \App\Track::findorfail($track_id);
-        if ($track) {
-           $track->skills()->sync($skill->id,['skill_order'=>$track->maxSkill($track)? $houses->maxSkill($track)->skill_order + 1:1], FALSE);
-        }
-
-        $new_skill = Skill::whereId($skill->id)->with(['status','user'])->first();
-        return response()->json(['message' => 'Skill correctly added and attached.', 'skill'=>$new_skill,'code'=>201]);
     }
 
     /**
@@ -87,9 +84,9 @@ class SkillController extends Controller
             $file = $request->lesson_link->move(public_path('videos/skills'), $timestamp.'.mp4');
         } 
 
-        $track = \App\Track::findorfail($request->track_id);
-        if ($track) {
-           $track->skills()->sync($skill->id,['skill_order'=>$track->maxSkill($track)? $houses->maxSkill($track)->skill_order + 1:1], FALSE);
+        foreach ($request->track_ids as $track_id) {
+           $track = Track::find($track_id);
+           $skill->tracks()->sync($request->track_ids,['skill_order'=>$track->maxSkill($track)? $houses->maxSkill($track)->skill_order + 1:1], FALSE);
         }
 
         $skill->fill($request->except('lesson_link','track_id'))->save();

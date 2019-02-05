@@ -61,7 +61,7 @@ public function store(CreateFieldRequest $request)
      * @param  Field  $field
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, Field $field)
+    public function update(CreateFieldRequest $request, Field $field)
     {   
         $logon_user = Auth::user();
         if ($logon_user->id != $field->user_id && !$logon_user->is_admin) {            

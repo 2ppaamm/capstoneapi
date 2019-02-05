@@ -14,6 +14,6 @@
 Route::get('opencourses', 'CourseController@open');
 Route::get('leaders', 'DashboardController@leaders');
 
-Route::get('/loadall', 'LoadController@loadall');
-Route::get('/loadquestions', 'LoadQuestions@loadall');
-Route::get('/loadsecondary', 'LoadSecondary@loadall');
+//Route::get('/loadall', 'LoadController@loadall');
+//Route::get('/loadquestions', 'LoadQuestions@loadall');
+//Route::get('/loadsecondary', 'LoadSecondary@loadall');
