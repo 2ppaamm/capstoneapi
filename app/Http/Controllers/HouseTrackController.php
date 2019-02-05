@@ -24,10 +24,9 @@ class HouseTrackController extends Controller
      */
  
 	public function index(House $house){
-        $house = $house->tracks()-> with(['unit'=>function($query){$query->select('number_of','unit');} ])
-                ->select('description','id','track','level_id')->with('level')
-                ->with(['skills' => function ($query) {
-                    $query->select('track_id','skill')->orderBy('skill_order');}])
+        $house = $house->tracks()->select('description','id','status_id','track','level_id')->with(['level'=>function($query){$query->select('id','description');}])->with(['status'=>function($query){$query->select('id','status');}])
+                //->with(['skills' => function ($query) {
+                //$query->select('id','skill')->orderBy('skill_order');}])
                 ->orderBy('pivot_track_order')->get();
         if (!$house) {
             return response()->json(['message' => 'This class does not exist', 'code'=>404], 404);
@@ -93,5 +92,10 @@ class HouseTrackController extends Controller
             return response()->json(['message'=>'Unable to remove track from class', 'code'=>500], 500);
         }
         return response()->json(['message'=>'Track removed successfully','tracks'=>$tracks, 'code'=>201],201);
+    }
+
+    public function deleteAll(House $house){
+        $house->tracks()->detach();
+        return response()->json(['message'=>'All tracks are deleted','house'=>$house, 'code'=>201],201);
     }
 }

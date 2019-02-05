@@ -34,6 +34,7 @@ Route::resource('courses.houses', 'CourseHouseController', ['except' => ['edit',
 Route::resource('courses.users', 'CourseUserController', ['except' => ['edit', 'create']]);
 Route::resource('houses.users', 'HouseUserController', ['except' => ['edit', 'create']]);
 Route::resource('courses.tracks', 'CourseTrackController', ['except' => ['edit', 'create']]);
+Route::delete('houses/{house}/tracks','HouseTrackController@deleteAll');
 Route::resource('houses.tracks', 'HouseTrackController', ['except' => ['edit', 'create']]);
 Route::resource('users.tests', 'UserTestController', ['except' => ['edit', 'create']]);
 Route::resource('tracks', 'TrackController', ['except' =>['edit']]);
@@ -45,6 +46,7 @@ Route::resource('skills', 'SkillController', ['except' =>['edit']]);
 Route::resource('questions', 'QuestionController', ['except' =>['edit']]);
 Route::resource('enrolments', 'EnrolmentController', ['except' => ['edit', 'create']]);
 Route::resource('skills.questions', 'SkillQuestionsController', ['except' => ['edit', 'create']]);
+Route::delete('tracks/{track}/skills','TrackSkillController@deleteAll');
 Route::resource('tracks.skills', 'TrackSkillController', ['except' => ['edit', 'create']]);
 
 Route::get('users/{username}/logs','LogController@show');

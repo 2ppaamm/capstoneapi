@@ -43,28 +43,28 @@ class HouseController extends Controller
         $user = Auth::user();
         $values['user_id'] = $user->id;
         $timestamp = time();
-        $course = Course::find($request->course_id);
+        $course = $request->course_id?Course::find($request->course_id):null;
         
         if ($request->hasFile('image')) {
             $values['image'] = 'images/houses/'.$timestamp.'.png';
             $request->image->move(public_path('images/houses'), $timestamp.'.png');
-        } else if (file_exists($course->image)) copy($course->image, public_path('images/houses'.$timestamp.'.png'));
+        } else if ($course && file_exists($course->image)) copy($course->image, public_path('images/houses'.$timestamp.'.png'));
      //enrol user to the house in house_role_user
         $house = House::create($values);
         $house->enrolledusers()->attach($user, ['role_id'=>4]);
 
 
       //find course, move image and create tracks
-        $tracks = Course::find($request->course_id)->tracks;
-
-
-        for ($i=0; $i<sizeof($tracks); $i++) {
-            $house->tracks()->attach($tracks[$i],['track_order'=>$tracks[$i]->pivot->track_order]);
+        if ($course){
+            $tracks = Course::find($request->course_id)->tracks;
+            for ($i=0; $i<sizeof($tracks); $i++) {
+                $house->tracks()->attach($tracks[$i],['track_order'=>$tracks[$i]->pivot->track_order]);
+            }
         }
 
 //        $controller = new DashboardController;
 
-        return response()->json(['message'=>$house->house . ' is now added as a new class.','code'=>201, 'class'=>$this->index()], 201);
+        return response()->json(['message'=>$house->house . ' is now added as a new class.','code'=>201, 'class'=>$house], 201);
     }
 
     /**
@@ -113,11 +113,11 @@ class HouseController extends Controller
      */
     public function destroy(House $house)
     {
-        if (count($house->tracks) > 0 or count($house->enrolledusers) > 0) return response()->json(['message'=>'There are tracks or users in the class, cannot delete', 'code'=>404], 404);
+        if (count($house->tracks) > 0 or count($house->enrolledusers) < 2) return response()->json(['message'=>'There are tracks or users in the class, cannot delete', 'code'=>404], 404);
         else {
             try {$house->delete();} 
             catch (\Exception $exception) { return response()->json(['message'=>'Class cannot be deleted', 'code'=>404], 404);}
         }
-        return response()->json(['message'=>'Class deleted successfully', 'code'=>204], 204);
+        return response()->json(['message'=>'Class deleted successfully', 'code'=>200],200);
     }
 }

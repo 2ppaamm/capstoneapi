@@ -25,8 +25,10 @@ class CreateTrackRequest extends Request
     {
         return [
         'track' => 'required|max:255',
+        'description' => 'required|max:255',
         'field_id' => 'required',
-        'level_id' => 'required'
+        'level_id' => 'required',
+        'status_id' => 'required'
         ];
     }
 

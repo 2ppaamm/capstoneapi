@@ -33,7 +33,7 @@ class CourseController extends Controller
      */
     public function open()
     {
-        return $courses = Course::with('tracks.skills','houses.created_by')->get();
+        return $courses = Course::with('tracks.skills','validHouses.created_by')->get();
     }
 
     /**
