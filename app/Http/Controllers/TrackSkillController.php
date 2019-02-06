@@ -22,13 +22,9 @@ class TrackSkillController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index($id)
+    public function index(Track $track)
     {
-        $track = Track::find($id);
-        if (!$track) {
-            return response()->json(['message' => 'This track does not exist', 'code'=>404], 404);
-        }
-        return response() -> json (['message'=>'Track skills received.','skills' => $track->skills, 'code'=>200], 200);
+        return response() -> json (['message'=>'Track skills received.','skill' => $track->skills, 'code'=>200], 200);
     }
 
     /**
@@ -37,11 +33,11 @@ class TrackSkillController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(CreateSkillRequest $request, Track $tracks)
+    public function store(CreateSkillRequest $request, Track $track)
     {
-        $skill = $request->all();
-        $new_skill = Auth::user()->skills()->create($skill);
-        $tracks->skills()->attach($new_skill->id,['skill_order'=>$tracks->maxSkill($tracks->id)? $tracks->maxSkill($tracks->id)->skill_order + 1:1]);        
+        $values = $request->all();
+        $skill = Auth::user()->skills()->create($values);
+        $skill->tracks()->attach($track->id,['skill_order'=>$track->maxSkill($track->id)? $track->maxSkill($track->id)->skill_order + 1:1]);        
         return response()->json(['message' => 'Skill correctly added', 'skill'=>$skill, 'code'=>201]);
     }
 
@@ -52,9 +48,9 @@ class TrackSkillController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(UpdateRequest $request, Track $tracks, Skill $skills)
+    public function update(UpdateRequest $request, Track $track, Skill $skill)
     {
-        $skill = $tracks->skills->find($skills->id);
+        $skill = $track->skills->find($skill->id);
 
         if (!$skill) {
             return response()->json(['message'=>'This skill is either not found or is not linked to this track. Cannot update','code'=>404], 404);
@@ -62,10 +58,10 @@ class TrackSkillController extends Controller
         
         $field = $request->get('field');
         $value = $request->get('value');
-            $tracks->skills()->updateExistingPivot($skills->id, [$field=>$value]);
+            $track->skills()->updateExistingPivot($skill->id, [$field=>$value]);
 
         try {
-            $tracks->skills()->updateExistingPivot($skills->id, [$field=>$value]);
+            $track->skills()->updateExistingPivot($skill->id, [$field=>$value]);
         }
         catch(\Exception $exception){
             return response()->json(['message'=>'Update of skill in the track failed!','code'=> $exception->getCode()]);
@@ -80,12 +76,12 @@ class TrackSkillController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show(Track $tracks, Skill $skills)
+    public function show(Track $track, Skill $skill)
     {
-        if (!$tracks->skills->find($skills->id)) {
+        if (!$track->skills->find($skill->id)) {
             return response()->json(['message' => 'This skill does not exist in the track.', 'code'=>404], 404);
         }
-        return response()->json(['message'=>'Skill retrieved.','skill'=>$skills, 'code'=>200],200);
+        return response()->json(['message'=>'Skill retrieved.','skill'=>$skill, 'code'=>200],200);
     }
 
     /**
