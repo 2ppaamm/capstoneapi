@@ -105,7 +105,6 @@ class TrackController extends Controller
         if ($logon_user->id != $tracks->user_id && !$logon_user->is_admin) {            
             return response()->json(['message' => 'You have no access rights to delete track','code'=>401], 401);   
         }  
-    return $tracks;
         if(sizeof($tracks->skills) > 0){
             return response()->json(['message'=>'There are skills belonging to this track. Do you want to delink them?','code'=>'delink_skills'], 409);            
         }
