@@ -46,7 +46,7 @@ class HouseTrackController extends Controller
         $track = $request->all();
         $new_track = Auth::user()->tracks()->create($track);
         $house->tracks()->attach($new_track->id,['track_order'=>$house->maxTrack($house->id)? $house->maxTrack($house->id)->track_order + 1:1]);
-        return response()->json(['message' => 'Track correctly added', 'tracks'=>$house->tracks,'code'=>201]);
+        return response()->json(['message' => 'Track correctly added', 'track'=>$new_track,'code'=>201]);
     }
 
     /**
