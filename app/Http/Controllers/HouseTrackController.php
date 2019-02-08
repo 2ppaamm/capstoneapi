@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use App\Http\Requests;
 use App\Http\Controllers\Controller;
 use App\House;
-use App\Http\Requests\CreateTrackRequest;
+use App\Http\Requests\CreateHouseTrackRequest;
 use Auth;
 use App\Http\Requests\UpdateRequest;
 use App\Track;
@@ -41,12 +41,10 @@ class HouseTrackController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(CreateTrackRequest $request, House $house)
+    public function store(CreateHouseTrackRequest $request, House $house)
     {    
-        $track = $request->all();
-        $new_track = Auth::user()->tracks()->create($track);
-        $house->tracks()->attach($new_track->id,['track_order'=>$house->maxTrack($house->id)? $house->maxTrack($house->id)->track_order + 1:1]);
-        return response()->json(['message' => 'Track correctly added', 'track'=>$new_track,'code'=>201]);
+        $house->tracks()->sync($request->track_ids, false);
+        return response()->json(['message' => 'Track(s) correctly added to house', 'house'=>$house->tracks,'code'=>201]);
     }
 
     /**
