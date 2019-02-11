@@ -43,7 +43,7 @@ class HouseController extends Controller
         $user = Auth::user();
         $values['user_id'] = $user->id;
         $timestamp = time();
-        $course = $request->course_id?Course::find($request->course_id):null;
+        $course = Course::find($request->course_id);
         
         if ($request->hasFile('image')) {
             $values['image'] = 'images/houses/'.$timestamp.'.png';
@@ -55,7 +55,7 @@ class HouseController extends Controller
 
 
       //find course, move image and create tracks
-        if ($course){
+        if ($request->link_tracks){
             $tracks = Course::find($request->course_id)->tracks;
             for ($i=0; $i<sizeof($tracks); $i++) {
                 $house->tracks()->attach($tracks[$i],['track_order'=>$tracks[$i]->pivot->track_order]);
@@ -75,7 +75,7 @@ class HouseController extends Controller
      */
     public function show(House $house)
     {
-        return response()->json(['message'=> 'Class is as displayed.', 'code'=>201, 'house'=>$house, 'tracks'=>$house->tracks],201);
+        return response()->json(['message'=> 'Class is as displayed.', 'code'=>201, 'house'=>$house],201);
     }
 
 

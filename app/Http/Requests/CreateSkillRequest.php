@@ -27,7 +27,6 @@ class CreateSkillRequest extends Request
         'skill' => 'required|max:255',
         'description'=>'required',
         'status_id' => 'required|exists:statuses,id',
-        'track_ids' => 'required|array',
         'track_ids.*' => 'exists:tracks,id', // check each item in the array 
         'lesson_link'=> 'mimes:mov, avi,mpeg,quicktime,mp4|max:10240',
         'image' => 'mimes:jpeg,bmp,png'

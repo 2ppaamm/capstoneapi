@@ -42,9 +42,9 @@ class HouseTrackController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function store(CreateHouseTrackRequest $request, House $house)
-    {    
+    { 
         $house->tracks()->sync($request->track_ids, false);
-        return response()->json(['message' => 'Track(s) correctly added to house', 'house'=>$house->tracks,'code'=>201]);
+        return response()->json(['message' => 'Track(s) correctly added to house', 'tracks added'=>$house->tracks,'code'=>201]);
     }
 
     /**

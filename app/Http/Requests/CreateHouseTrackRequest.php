@@ -24,7 +24,6 @@ class CreateHouseTrackRequest extends FormRequest
     public function rules()
     {
         return [
-            'track_ids' => 'array',
             'track_ids.*' => 'exists:tracks,id' // check each item in the array 
         ];
     }

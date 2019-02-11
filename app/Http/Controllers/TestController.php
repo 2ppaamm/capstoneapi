@@ -11,7 +11,7 @@ use App\Test;
 class TestController extends Controller
 {
     public function __construct(){
-        $this->middleware('oauth', ['except'=>['index']]);
+//        $this->middleware('oauth', ['except'=>['index']]);
     }
 
     /**
