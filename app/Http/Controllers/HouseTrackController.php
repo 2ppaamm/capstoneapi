@@ -41,9 +41,12 @@ class HouseTrackController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(CreateHouseTrackRequest $request, House $house)
+    public function store(Request $request, House $house)
     { 
-        $house->tracks()->sync($request->track_ids, false);
+        foreach ($request->track_ids as $track_id){
+            Track::find($track_id)?$house->tracks()->sync($request->track_ids, false): return response()->json(['message'=>'Error in track chosen'], 401);
+
+        }
         return response()->json(['message' => 'Track(s) correctly added to house', 'tracks added'=>$house->tracks,'code'=>201]);
     }
 
