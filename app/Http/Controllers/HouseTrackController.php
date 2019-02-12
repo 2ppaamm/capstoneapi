@@ -44,8 +44,8 @@ class HouseTrackController extends Controller
     public function store(Request $request, House $house)
     { 
         foreach ($request->track_ids as $track_id){
-            if (Track::find($track_id)){
-                $house->tracks()->sync($track_id, false);
+            if ($track=Track::find($track_id)){
+                $track->houses()->sync($house->id,false);
             } else {
                 response()->json(['message'=>'Error in track chosen'], 401);
             } 
