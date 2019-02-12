@@ -29,7 +29,6 @@ class CreateTrackRequest extends Request
         'field_id' => 'required',
         'level_id' => 'required',
         'status_id' => 'required',
-        'skill_ids' => 'array',
         'skill_ids.*' => 'exists:skills,id' // check each item in the array 
 
         ];
