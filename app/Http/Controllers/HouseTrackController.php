@@ -45,7 +45,7 @@ class HouseTrackController extends Controller
     {   
         foreach ($request->all() as $track_id){
             if ($track=Track::find($track_id)){
-                $track->houses()->sync($house->id,false);
+                $track->houses()->sync($house->id, false);
             } else {
                 response()->json(['message'=>'Error in track chosen'], 401);
             } 

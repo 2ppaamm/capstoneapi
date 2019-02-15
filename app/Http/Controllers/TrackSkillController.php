@@ -33,12 +33,16 @@ class TrackSkillController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(CreateSkillRequest $request, Track $track)
+    public function store(Request $request, Track $track)
     {
-        $values = $request->all();
-        $skill = Auth::user()->skills()->create($values);
-        $skill->tracks()->attach($track->id,['skill_order'=>$track->maxSkill($track->id)? $track->maxSkill($track->id)->skill_order + 1:1]);        
-        return response()->json(['message' => 'Skill correctly added', 'skill'=>$skill, 'code'=>201]);
+        foreach ($request->all() as $skill_id){
+            if ($skill = Skill::find($skill_id)){
+                $skill->tracks()->sync($track->id, false);
+            } else {
+                response()->json(['message'=>'Error in skill chosen'], 401);
+            } 
+        }
+        return response()->json(['message' => 'Skill(s) correctly added', 'skill'=>$skill, 'code'=>201]);
     }
 
     /**
