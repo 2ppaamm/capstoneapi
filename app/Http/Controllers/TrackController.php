@@ -89,7 +89,8 @@ class TrackController extends Controller
             return response()->json(['message' => 'You have no access rights to update track','code'=>401], 401);     
         }
         $track->fill($request->all())->save();
-
+        $track->skills()->sync($request->skill_id, false);
+        
         return response()->json(['message'=>'Track updated','track' => $track, 'code'=>201], 201);
     }
 
