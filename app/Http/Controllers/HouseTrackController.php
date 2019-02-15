@@ -42,8 +42,8 @@ class HouseTrackController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function store(Request $request, House $house)
-    { 
-        foreach ($request->track_ids as $track_id){
+    {   
+        foreach ($request->all() as $track_id){
             if ($track=Track::find($track_id)){
                 $track->houses()->sync($house->id,false);
             } else {
