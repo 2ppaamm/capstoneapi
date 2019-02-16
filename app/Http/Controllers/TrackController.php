@@ -100,21 +100,22 @@ class TrackController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Track $track)
+    public function destroy(Request $request, Track $track)
     {
         $logon_user = Auth::user();
         if ($logon_user->id != $track->user_id && !$logon_user->is_admin) {            
             return response()->json(['message' => 'You have no access rights to delete track','code'=>401], 401);   
         }  
+        if ($request->delink_skills){
+            $track->skills()->detach();
+        }        
+
         if(sizeof($track->skills) > 0){
             return response()->json(['message'=>'There are skills belonging to this track. Do you want to delink them?','skills'=>$track->skills,'code'=>'delink_skills'], 409);            
         }
         if(sizeof($track->courses)>0 || sizeof($track->houses)>0){
             return response()->json(['message'=>'This track belongs to a class or course. You will need to go to the course or class to delink them first','classes'=>$track->houses, 'courses'=>$track->courses,'code'=>409], 409);
         }
-        if ($request->delink_skills){
-            $track->skills()->detach();
-        }        
         $track->delete();
         return response()->json(['message'=>'Track has been deleted.'], 200);
     }
