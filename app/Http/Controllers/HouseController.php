@@ -113,11 +113,12 @@ class HouseController extends Controller
      */
     public function destroy(House $house)
     {
-        if (count($house->tracks) > 0 or count($house->enrolledusers) < 2) return response()->json(['message'=>'There are tracks or users in the class, cannot delete', 'code'=>404], 404);
-        else {
-            try {$house->delete();} 
-            catch (\Exception $exception) { return response()->json(['message'=>'Class cannot be deleted', 'code'=>404], 404);}
-        }
+        if (count($house->tracks) > 0 ) return response()->json(['message'=>'There are tracks in the class, cannot delete', 'code'=>404], 404);
+        else if (count($house->enrolledusers) > 2) return response()->json(['message'=>'There are users in the class, cannot delete','code'=>404], 404);
+            else {
+                try {$house->delete();} 
+                catch (\Exception $exception) { return response()->json(['message'=>'Class cannot be deleted', 'code'=>404], 404);}
+            }
         return response()->json(['message'=>'Class deleted successfully', 'code'=>200],200);
     }
 }
