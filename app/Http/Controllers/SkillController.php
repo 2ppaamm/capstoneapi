@@ -114,15 +114,19 @@ class SkillController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Skill $skill)
+    public function destroy(Request $request, Skill $skill)
     {
         if(sizeof($skill->questions) > 0)
         {
             return response()->json(['message'=>'There are questions in this skill. Delete all questions first.'], 409);
         }
+
+        // check if user wants to delink all the tracks
+        $request->delink_tracks ? $skill->tracks()->detach():null;
+
         if(sizeof($skill->tracks) > 0)
         {
-            return response()->json(['message'=>'There are tracks that uses this skill. Delete all links to tracks first.'], 409);
+            return response()->json(['message'=>'There are tracks that uses this skill. Do you want to delink all the tracks?', 'code'=>'delink_tracks'], 409);
         }
         $skill->delete();
         return response()->json(['message'=>'Skill has been deleted.'], 200);
