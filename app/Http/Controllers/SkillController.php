@@ -82,11 +82,14 @@ class SkillController extends Controller
             $skill->lesson_link = 'videos/skills/'.$timestamp.'.mp4';
 
             $file = $request->lesson_link->move(public_path('videos/skills'), $timestamp.'.mp4');
-        } 
-
-        foreach ($request->track_ids as $track_id) {
-           $track = Track::find($track_id);
-           $skill->tracks()->sync($track_id,['skill_order'=>$track->maxSkill($track)? $track->maxSkill($track)->skill_order + 1:1], FALSE);
+        } else if ($request->lesson_link){
+            $skill->lesson_link = $request->lesson_link;
+        }
+        if ($request->track_ids){
+            foreach (json_decode($request->track_ids) as $track_id) {
+               $track = Track::find($track_id);
+               $skill->tracks()->sync($track_id,['skill_order'=>$track->maxSkill($track)? $track->maxSkill($track)->skill_order + 1:1], FALSE);
+            }        
         }
 
         $skill->fill($request->except('lesson_link','track_id'))->save();
