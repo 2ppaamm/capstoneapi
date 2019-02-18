@@ -97,7 +97,8 @@ class Skill extends Model
             'noOfTries'=> $noOfTries,
             'noOfPasses'=>max(0,$noOfPasses),
             'noOfFails'=> max(0,$noOfFails)];
-        $this->users()->updateExistingPivot($userid, $record);              //update record
+
+        $this->users()->sync([$userid=>$record]);              //update record
         return $skill_maxile;
     }
 
@@ -121,7 +122,7 @@ class Skill extends Model
             'noOfTries'=> $noOfTries,
             'noOfPasses'=>max(0,$noOfPasses),
             'noOfFails'=> max(0,$noOfFails)];
-        return $this->users()->updateExistingPivot($userid, $record);
+        return $this->users()->sync([$userid=>$record]);
     }
 
     public function users_failed(){

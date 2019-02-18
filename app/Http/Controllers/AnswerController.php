@@ -43,7 +43,7 @@ class AnswerController extends Controller
 	    		 	$record['correct'] = FALSE;
     				array_push($message, $question_id. ' Incorrect. New Question is '. $new_question->id);
     			}
-		    	$user->unansweredQuestions()->updateExistingPivot($question_id, $record);    	
+		    	$user->unansweredQuestions()->sync([$question_id=>$record]);    	
 	    	    $new_question ? $user->myQuestions()->sync([$new_question->id],false) : array_push($message, 'No new question has been included.');
     	   } else array_push($message, $question_id.' Question not found');
     	}

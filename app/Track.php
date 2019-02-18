@@ -111,7 +111,7 @@ class Track extends Model
             'track_passed' => $track_maxile < $this->level->end_maxile_level ? FALSE : TRUE,
             'track_maxile' => $track_maxile];
 
-        $this->users()->updateExistingPivot($user->id, $record);
+        $this->users()->sync([$user->id=>$record]);
         return $track_maxile;
     }
 
@@ -120,7 +120,7 @@ class Track extends Model
             'track_test_date' => new DateTime('now'),
             'track_passed' => TRUE,
             'track_maxile' => $track_maxile];
-        $this->users()->updateExistingPivot($user->id, $record);
+        $this->users()->sync([$user->id=>$record]);
     }
 
     public function failTrack($user, $track_maxile){
@@ -128,7 +128,7 @@ class Track extends Model
             'track_test_date' => new DateTime('now'),
             'track_passed' => FALSE,
             'track_maxile' => $track_maxile];
-        $this->users()->updateExistingPivot($user->id, $record);
+        $this->users()->sync([$user->id=>$record]);
     }
 
     public function skillsFailed($user){

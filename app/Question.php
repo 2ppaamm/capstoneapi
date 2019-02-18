@@ -70,6 +70,6 @@ class Question extends Model
             'answered_date' => new DateTime('now'),
             'correct' =>$correctness,
             'attempts' => $this->attempts($user->id) + 1];
-        return $this->users()->updateExistingPivot($user->id, $record);
+        return $this->users()->sync([$user->id=>$record]);
     }
 }

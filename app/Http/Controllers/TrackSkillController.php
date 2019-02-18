@@ -62,10 +62,10 @@ class TrackSkillController extends Controller
         
         $field = $request->get('field');
         $value = $request->get('value');
-            $track->skills()->updateExistingPivot($skill->id, [$field=>$value]);
+            $track->skills()->sync([$skill->id=>[$field=>$value]]);
 
         try {
-            $track->skills()->updateExistingPivot($skill->id, [$field=>$value]);
+            $track->skills()->sync([$skill->id=>[$field=>$value]]);
         }
         catch(\Exception $exception){
             return response()->json(['message'=>'Update of skill in the track failed!','code'=> $exception->getCode()]);

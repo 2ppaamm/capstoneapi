@@ -76,7 +76,7 @@ class CourseTrackController extends Controller
      */
     public function update(UpdateRequest $request, Course $courses, Track $tracks)
     {        
-        $msg =  $courses->tracks()->updateExistingPivot($tracks->id, [$request->get('field')=>$request->get('value')]) ? $request->field." successfully Updated" : "The track does not belong to the course.";
+        $msg =  $courses->tracks()->sync([$tracks->id=>[$request->get('field')=>$request->get('value')]]) ? $request->field." successfully Updated" : "The track does not belong to the course.";
         return response()->json(['message'=>$msg, 'track'=>$courses->tracks->find($tracks->id), 'code'=>201], 201);
     }
 

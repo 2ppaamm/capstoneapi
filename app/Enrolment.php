@@ -16,7 +16,7 @@ class Enrolment extends Model
      *
      * @var array
      */
-    protected $hidden = ['mastercode', 'payment_email', 'places_alloted'];
+    protected $hidden = ['payment_email', 'places_alloted'];
 
     public function users(){
     	return $this->belongsTo(User::class, 'user_id');
