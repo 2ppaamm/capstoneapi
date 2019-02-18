@@ -69,6 +69,7 @@ class DiagnosticController extends Controller
             $houses = \App\House::find($check_mastercode->house_id);
             $check_mastercode->places_alloted -= 1;
             $mastercode = $check_mastercode->places_alloted < 1 ? null : $request->mastercode;
+            $check_mastercode->save();
             $enrolment = Enrolment::firstOrNew(['user_id'=>$user->id, 'house_id'=>$check_mastercode->house_id, 'role_id'=>Role::where('role', 'LIKE', '%Student%')->first()->id]);
             $enrolment->fill(['start_date'=>new DateTime('now'),'expiry_date'=>(new DateTime('now'))->modify('+1 year'), 'payment_email'=>$check_mastercode->payment_email, 'purchaser_id'=>$check_mastercode->user_id, 'transaction_id'=>$check_mastercode->transaction_id, 'payment_status'=>$check_mastercode->payment_status, 'amount_paid'=>$check_mastercode->amount_paid/$check_mastercode->places_alloted, 'currency_code'=>$check_mastercode->currency_code])->save();
             $user->date_of_birth = Carbon::createFromFormat('m/d/Y',$request->date_of_birth);        

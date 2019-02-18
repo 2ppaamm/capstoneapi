@@ -283,7 +283,7 @@ class User extends Model implements AuthenticatableContract,
     }
 
     public function calculateUserMaxile($test){
-        $highest_level_passed = Level::whereIn('id', $this->tracksPassed()->pluck('level_id'))->orderBy('level', 'desc')->first();
+return        $highest_level_passed = Level::whereIn('id', $this->tracksPassed()->pluck('level_id'))->orderBy('level', 'desc')->first();
         $user_maxile = $highest_level_passed ? number_format(max($this->testedTracks()->whereIn('track_id',$highest_level_passed->tracks()->pluck('id'))->avg('track_maxile'), $highest_level_passed->start_maxile_level), 2,'.','') : 0;
         $this->maxile_level = $user_maxile;
         $this->last_test_date = new DateTime('now');
