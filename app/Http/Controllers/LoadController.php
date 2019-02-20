@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers;
+/*namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Http\Requests;
@@ -19,7 +19,7 @@ class LoadController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function loadall()
+  /*  public function loadall()
     {
         ini_set('max_execution_time', 300);
         $currentuser =  \App\User::whereId(1)->first();
@@ -69,7 +69,7 @@ class LoadController extends Controller
      */
     public function loadtracks()
     {
-        Excel::selectSheets('tracks')->load('public/capstone_questions.xlsx', function ($reader) {
+    /*    Excel::selectSheets('tracks')->load('public/capstone_questions.xlsx', function ($reader) {
             $tracks = $reader->all();
             foreach ($tracks as $track) {
                 \App\Track::create($track->toArray());
@@ -127,7 +127,7 @@ class LoadController extends Controller
      * @param excel spread sheet
      * @return
      */
-    public function loadcourses()
+   /* public function loadcourses()
     {
         Excel::selectSheets('courses')->load('public/capstone_questions.xlsx', function ($reader) {
             $courses = $reader->all();
@@ -144,7 +144,7 @@ class LoadController extends Controller
      * @return
      */
 
-    public function loadskills()
+/*    public function loadskills()
     {
         Excel::selectSheets('skills')->load('public/capstone_questions.xlsx', function ($reader) {
             $skills = $reader->all();
@@ -175,7 +175,7 @@ class LoadController extends Controller
      * @return
      */
 
-    public function loadroles ()
+  /*  public function loadroles ()
     {
         Excel::selectSheets('role_user')->load('public/capstone_questions.xlsx', function ($reader) {
             $house_role_users = $reader->all();
@@ -216,7 +216,7 @@ class LoadController extends Controller
      * @return
      */
 
-    public function loadmastercodes ()
+/*    public function loadmastercodes ()
     {
         Excel::selectSheets('mastercodes')->load('public/capstone_questions.xlsx', function ($reader) {
             $mastercodes = $reader->all();

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers;
+/*namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Http\Requests;
@@ -19,7 +19,7 @@ class LoadSecondary extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function loadall()
+  /*  public function loadall()
     {
         $currentuser =  \App\User::whereId(3)->first();
         Auth::login($currentuser);
@@ -36,7 +36,7 @@ class LoadSecondary extends Controller
      *
      * @return database is loaded with tracks
      */
-    public function loadtracks()
+/*    public function loadtracks()
     {
         Excel::selectSheets('tracks')->load('public/sec_questions.xlsx', function ($reader) {
             $tracks = $reader->all();
@@ -81,7 +81,7 @@ class LoadSecondary extends Controller
      * @return
      */
 
-    public function loadskills()
+  /*  public function loadskills()
     {
         Excel::selectSheets('skills')->load('public/sec_questions.xlsx', function ($reader) {
             $skills = $reader->all();
@@ -115,7 +115,7 @@ class LoadSecondary extends Controller
      * @return
      */
 
-    public function loadsolutions ()
+/*    public function loadsolutions ()
     {
         Excel::selectSheets('solutions')->load('public/sec_questions.xlsx', function ($reader) {
             $solutions = $reader->all();

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers;
+/*namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Http\Requests;
@@ -19,7 +19,7 @@ class LoadQuestions extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function loadall()
+  /*  public function loadall()
     {
         $currentuser =  \App\User::whereId(3)->first();
         Auth::login($currentuser);
@@ -64,7 +64,7 @@ class LoadQuestions extends Controller
      * @return
      */
 
-    public function loadsolutions ()
+/*    public function loadsolutions ()
     {
         Excel::selectSheets('solutions')->load('public/questions.xlsx', function ($reader) {
             $solutions = $reader->all();
