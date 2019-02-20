@@ -27,6 +27,11 @@ class TrackSkillController extends Controller
         return response() -> json (['message'=>'Track skills received.','skill' => $track->skills, 'code'=>200], 200);
     }
 
+    public function list_tracks(Skill $skill)
+    {
+        return response() -> json (['message'=>'Skill tracks received.','tracks' => $skill->tracks, 'code'=>200], 200);
+    }
+
     /**
      * Store a newly created resource in storage.
      *
@@ -104,9 +109,14 @@ class TrackSkillController extends Controller
         return response()->json(['message'=>'Skill has been removed from this track.', 'skills'=>$track->skills()->with('user')->get(), 'code'=>201], 201);
     }
 
-    public function deleteAll(Track $track){
+    public function deleteSkills(Track $track){
         $track->skills()->detach();
         return response()->json(['message'=>'All skills are deleted','track'=>$track, 'code'=>201],201);
+    }
+
+    public function deleteTracks(Skill $skill){
+        $skill->tracks()->detach();
+        return response()->json(['message'=>'All tracks are deleted','skill'=>$skill, 'code'=>201],201);
     }
 
 }

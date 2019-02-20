@@ -57,7 +57,7 @@ class SkillController extends Controller
 
             $skill->save();
         }
-        $skill->tracks()->sync($request->track_ids, FALSE);
+        $skill->tracks()->sync(json_decode($request->track_ids), FALSE);
         return response()->json(['message' => 'Skill correctly added.', 'skill'=>$skill,'code'=>201]);
 
     }
