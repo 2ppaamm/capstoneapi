@@ -53,9 +53,11 @@ class TrackController extends Controller
         $values = $request->except('skill_ids');
         $values['user_id'] = $user->id;
         $track = Track::create($values);
-        foreach ($request->skill_ids as $skill_id) {
-           $skill = \App\Skill::find($skill_id);
-           $skill->tracks()->sync($track->id,['skill_order'=>$track->maxSkill($track)? $track->maxSkill($track)->skill_order + 1:1], FALSE);
+        if ($request->skills_ids){
+            foreach ($request->skill_ids as $skill_id) {
+               $skill = \App\Skill::find($skill_id);
+               $skill->tracks()->sync($track->id,['skill_order'=>$track->maxSkill($track)? $track->maxSkill($track)->skill_order + 1:1], FALSE);
+            }
         }
         return response()->json(['message' => 'Track correctly added.', 'track'=>$track,'code'=>201]);
     }
