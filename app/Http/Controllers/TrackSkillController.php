@@ -29,7 +29,6 @@ class TrackSkillController extends Controller
 
     public function list_tracks(Skill $skill)
     {
-        return $skill;
         return response() -> json (['message'=>'Skill tracks received.','tracks' => $skill->tracks, 'code'=>200], 200);
     }
 
