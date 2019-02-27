@@ -46,7 +46,7 @@ Route::get('skills/{skill}/tracks', 'TrackSkillController@list_tracks');
 Route::delete('skills/{skill}/tracks', 'TrackSkillController@deleteTracks');
 Route::resource('skills', 'SkillController', ['except' =>['edit']]);
 Route::resource('questions', 'QuestionController', ['except' =>['edit']]);
-Route::resource('enrolments', 'EnrolmentController', ['except' => ['edit', 'create']]);
+Route::resource('enrolments', 'EnrolmentController');
 Route::resource('skills.questions', 'SkillQuestionsController', ['except' => ['edit', 'create']]);
 Route::delete('tracks/{track}/skills','TrackSkillController@deleteSkills');
 Route::resource('tracks.skills', 'TrackSkillController', ['except' => ['edit', 'create']]);

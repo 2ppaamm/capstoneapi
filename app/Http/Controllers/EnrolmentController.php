@@ -25,11 +25,14 @@ class EnrolmentController extends Controller
      */
     public function index() {
         $user = Auth::user();
-        return $user->is_admin ? response()->json(['house'=>House::with('enrolment.roles')->with('enrolment.users.enrolment.roles')->get(),'message'=>'Enrolment retrieved', 'code'=> 201,201]) : response()->json(['message' =>'Not authorized to view enrolment details', 'code'=>401], 401);
-
-//        return response()->json(['data'=>$users], 200);
+        return $user->is_admin ? response()->json(['enrolments'=>Enrolment::with(['users','roles','houses','purchaser'])->get(),'message'=>'Enrolment retrieved', 'code'=> 201],201) : response()->json(['message' =>'Not authorized to view enrolment details', 'code'=>401], 401);
     }
 
+
+    public function create(){
+        $user=Auth::user();
+        return $user->is_admin ? response()->json(['users'=>\App\User::select('id','name','email')->get(), 'houses'=>House::select('id','house','currency','price')->get(), 'roles'=>\App\Role::select('id','role')->get(), 'currency'=>['USD','SGD'],'message'=>'Enrolments fields retrieved','code'=>201],201): response()->json(['message'=>'Not authorized to enrol.','code'=>401],401);
+    }
 
     /* Store a newly created resource in storage.
      *

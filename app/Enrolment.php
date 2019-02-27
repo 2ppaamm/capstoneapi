@@ -30,6 +30,10 @@ class Enrolment extends Model
     	return $this->belongsTo(House::class, 'house_id');
     }
 
+    public function purchaser(){
+        return $this->belongsTo(User::class, 'purchaser_id');
+    }
+
 //    public function mastercodes(){
 //        return $this->hasOne(Mastercode::class);
  //   }
