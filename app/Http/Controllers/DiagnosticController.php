@@ -93,7 +93,7 @@ class DiagnosticController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function answer(CreateQuizAnswersRequest $request){
+    public function answer(Request $request){
         $user = Auth::user();
         $old_maxile = $user->maxile_level;
         $test = \App\Test::find($request->test);
