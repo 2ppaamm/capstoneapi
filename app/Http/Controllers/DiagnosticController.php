@@ -37,7 +37,6 @@ class DiagnosticController extends Controller
 
         $courses = Course::where('course', 'LIKE', '%K to 6 Math%')->pluck('id'); //K-6 math course id
         $user = Auth::user();
-$user=User::find(113);
        $enrolled = $user->validEnrolment($courses); //k-6 courses enrolled in
 
         if (!count($enrolled)) return response()->json(['message'=>'Not properly enrolled or first time user', 'code'=>203]);
@@ -95,7 +94,6 @@ $user=User::find(113);
      */
     public function answer(CreateQuizAnswersRequest $request){
         $user = Auth::user();
-$user=User::find(113);        
         $old_maxile = $user->maxile_level;
         $test = \App\Test::find($request->test);
         if (!$test){
