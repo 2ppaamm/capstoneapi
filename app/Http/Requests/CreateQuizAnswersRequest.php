@@ -25,7 +25,8 @@ class CreateQuizAnswersRequest extends Request
     {
         return [
             'question_id' => 'required',
-            'answer' => 'required'
+            'answer' => 'required',
+            'test'=>'exists:tests,id'
         ];
     }
 

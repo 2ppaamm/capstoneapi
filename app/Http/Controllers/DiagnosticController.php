@@ -37,7 +37,7 @@ class DiagnosticController extends Controller
 
         $courses = Course::where('course', 'LIKE', '%K to 6 Math%')->pluck('id'); //K-6 math course id
         $user = Auth::user();
-
+$user=User::find(113);
        $enrolled = $user->validEnrolment($courses); //k-6 courses enrolled in
 
         if (!count($enrolled)) return response()->json(['message'=>'Not properly enrolled or first time user', 'code'=>203]);
@@ -93,8 +93,9 @@ class DiagnosticController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function answer(Request $request){
+    public function answer(CreateQuizAnswersRequest $request){
         $user = Auth::user();
+$user=User::find(113);        
         $old_maxile = $user->maxile_level;
         $test = \App\Test::find($request->test);
         if (!$test){
@@ -123,7 +124,9 @@ class DiagnosticController extends Controller
                 $correctness = $correct + $correct1 + $correct2 + $correct3 > 3? TRUE: FALSE;
             } else $correctness = $question->correct_answer != $request->answer[$key] ? FALSE:TRUE;
             $answered = $question->answered($user, $correctness, $test); // update question_user
-            $track = $question->skill->tracks->intersect($user->testedTracks()->orderBy('updated_at','desc')->get())->first();
+            $track = $question->skill->tracks()->first(); // change logic, take the first track
+
+//            $track = $question->skill->tracks->intersect($user->testedTracks()->orderBy('updated_at','desc')->get())->first();
             // calculate and saves maxile at 3 levels: skill, track and user
             $skill_maxile = $question->skill->handleAnswer($user->id, $question->difficulty_id, $correctness, $track, $test->diagnostic);
             $track_maxile = $track->calculateMaxile($user, $test->diagnostic);
