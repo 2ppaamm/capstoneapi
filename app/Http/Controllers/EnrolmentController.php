@@ -122,15 +122,15 @@ class EnrolmentController extends Controller
         return response()->json(['message' =>'Successful retrieval of teacher enrolment.', 'houses'=>$houses, 'code'=>201], 201);
     }
 
+ /**
+
     /**
      * Display a listing of the resource.
      *
      * @return \Illuminate\Http\Response
      */
-    public function show($id) {
-        $house=House::findorfail($id);
-        $users = User::with('enrolment.roles')->whereHouseId($id)->get();
-        return response()->json(['message' =>'Successful retrieval of enrolment.', 'users'=>$users, 'code'=>201], 201);
+    public function show(Enrolment $enrolment) {
+        return response()->json(['message' =>'Successful retrieval of enrolment.', 'enrolment'=>$enrolment, 'code'=>201], 201);
     }
      /**
      * Remove the specified resource from storage.
