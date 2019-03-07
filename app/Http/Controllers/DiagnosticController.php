@@ -94,13 +94,13 @@ $user=User::find(41);
      * @return \Illuminate\Http\Response
      */
     public function answer(CreateQuizAnswersRequest $request){
-        return $user = Auth::user();
+        $user = Auth::user();
         $old_maxile = $user->maxile_level;
         $test = \App\Test::find($request->test);
         if (!$test){
             return response()->json(['message' => 'Invalid Test Number', 'code'=>405], 405);    
         }
-
+return "hello";
         foreach ($request->question_id as $key=>$question_id) {
             $answered = FALSE;
             $correctness = FALSE;
