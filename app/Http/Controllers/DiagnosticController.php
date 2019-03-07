@@ -100,7 +100,7 @@ $user=User::find(41);
         if (!$test){
             return response()->json(['message' => 'Invalid Test Number', 'code'=>405], 405);    
         }
-return "hello";
+
         foreach ($request->question_id as $key=>$question_id) {
             $answered = FALSE;
             $correctness = FALSE;
@@ -140,6 +140,7 @@ return "hello";
                 }
             }
         }
+return "myhello";        
         return $test->fieldQuestions($user, $test);
     }
     /**
