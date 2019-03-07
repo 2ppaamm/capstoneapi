@@ -89,7 +89,7 @@ class Test extends Model
                 $track->users()->sync([$user->id], false);        //log tracks for user
             }              
         } elseif (!count($this->questions)) {           // not diagnostic, new test
-            $level = max(min(Level::find(7), Level::whereLevel(round($user->maxile_level/100)*100)->first()), Level::find(2));  // get userlevel
+return            $level = max(min(Level::find(7), Level::whereLevel(round($user->maxile_level/100)*100)->first()), Level::find(2));  // get userlevel
             $this->level_id = $level->id;
             $this->save();
 
