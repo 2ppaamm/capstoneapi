@@ -94,7 +94,7 @@ $user=User::find(41);
      * @return \Illuminate\Http\Response
      */
     public function answer(CreateQuizAnswersRequest $request){
-        $user = Auth::user();
+        return $user = Auth::user();
         $old_maxile = $user->maxile_level;
         $test = \App\Test::find($request->test);
         if (!$test){

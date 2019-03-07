@@ -53,7 +53,8 @@ class Question extends Model
     }
 
     public function attempts($userid){
-        return $this->users()->whereUserId($userid)->select('attempts')->first()->attempts;
+        $num_attempts =$this->users()->whereUserId($userid)->select('attempts')->first(); 
+        return $num_attempts ? $num_attempts->attempts:1;
     }
 
     /*
