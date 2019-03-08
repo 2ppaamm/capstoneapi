@@ -37,7 +37,6 @@ class DiagnosticController extends Controller
 
         $courses = Course::where('course', 'LIKE', '%K to 6 Math%')->pluck('id'); //K-6 math course id
         $user = Auth::user();
-$user=User::find(41);
        $enrolled = $user->validEnrolment($courses); //k-6 courses enrolled in
 
         if (!count($enrolled)) return response()->json(['message'=>'Not properly enrolled or first time user', 'code'=>203]);
@@ -140,7 +139,7 @@ $user=User::find(41);
                 }
             }
         }
-        
+
         return $test->fieldQuestions($user, $test);
     }
     /**
