@@ -132,6 +132,26 @@ class EnrolmentController extends Controller
     public function show(Enrolment $enrolment) {
         return response()->json(['message' =>'Successful retrieval of enrolment.', 'enrolment'=>$enrolment, 'code'=>201], 201);
     }
+
+   /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function update(Request $request, Enrolment $enrolment)
+    {
+        $logon_user = Auth::user();
+        if ($logon_user->id != $enrolment->user_id && !$logon_user->is_admin) {            
+            return response()->json(['message' => 'You have no access rights to update enrolment.','code'=>401], 401);     
+        }
+        $enrolment->fill($request->all())->save();
+        
+        return response()->json(['message'=>'Enrolment updated','enrolment' => $enrolment, 'code'=>201], 201);
+    }
+
+
      /**
      * Remove the specified resource from storage.
      *
