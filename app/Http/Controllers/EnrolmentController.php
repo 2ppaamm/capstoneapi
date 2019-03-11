@@ -51,7 +51,7 @@ class EnrolmentController extends Controller
         } else {                            // not enrolling yourself
             $enrol_user = User::find($request->user_id);
             $most_powerful = $user->enrolledClasses()->whereHouseId($request->house_id)->with('roles')->min('role_id');
-            if (!$most_powerful || $most_powerful > $role_to_enrol->id && !$user->is_admin) {        // administrator 
+            if (!$most_powerful || $most_powerful > $role_to_enrol->id || !$user->is_admin) {        // administrator 
                 return response()->json(['message'=>'No authorization to enrol', 'code'=>203], 203);
             }
         }
