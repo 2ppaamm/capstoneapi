@@ -42,7 +42,7 @@ class DiagnosticController extends Controller
         if (!count($enrolled)) return response()->json(['message'=>'Not properly enrolled or first time user', 'code'=>203]);
 
         $test = count($user->currenttest)<1 ? !count($user->completedtests) ? 
-        $user->tests()->create(['test'=>$user->name."'s First Diagnostic test",'description'=> $user->name."'s diagnostic test", 'diagnostic'=>TRUE]):
+        $user->tests()->create(['test'=>$user->name."'s First Diagnostic test",'description'=> $user->name."'s diagnostic test", 'diagnostic'=>TRUE, 'level_id'=>2]):
         $user->tests()->create(['test'=>$user->name."'s Daily test",'description'=> $user->name."'s Daily Test", 'diagnostic'=>FALSE]):
         $user->currenttest[0];
         return $test->fieldQuestions($user);                // output test questions
@@ -129,6 +129,8 @@ class DiagnosticController extends Controller
             $skill_maxile = $question->skill->handleAnswer($user->id, $question->difficulty_id, $correctness, $track, $test->diagnostic);
             $track_maxile = $track->calculateMaxile($user, $test->diagnostic);
             $field_maxile = $user->storefieldmaxile($track_maxile, $track->field_id);
+            $test->level_id = max($skill_maxile/100,$test->level_id);
+            $test->save();
             // find the class
             if (!$test->diagnostic) {
                 $house = $track->houses->intersect(\App\House::whereIn('id', Enrolment:: whereUserId($user->id)->whereRoleId(6)->pluck('house_id'))->get())->first();
@@ -140,7 +142,7 @@ class DiagnosticController extends Controller
             }
         }
 
-        return $test->fieldQuestions($user, $test);
+        return $test->fieldQuestions($user);
     }
     /**
      * Enrolls a student 

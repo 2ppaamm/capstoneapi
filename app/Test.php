@@ -46,6 +46,14 @@ class Test extends Model
         return $this->morphMany(Activity::class, 'classwork');
     }
 
+    public function question_answered(){
+        return $this->questions()->whereQuestionAnswered(TRUE);
+    }
+
+    public function diagnostic_error(){
+        return $this->question_answered()->orderBy('created_at','desc')->take(10);
+    }
+
     public function uncompletedQuestions(){
         return $this->questions()->whereQuestionAnswered(FALSE);
     }
@@ -64,13 +72,14 @@ class Test extends Model
         $message = '';
         if (!count($this->uncompletedQuestions)) {    // no more questions
             if ($this->diagnostic) {                  // if diagnostic check new level, get qns
+            $stop_test = $this->diagnostic_error()->whereCorrect(FALSE)->count()>=5 ? True : False; //check if user is testing below 
             if (count($this->questions) && $this->level_id) {        // if there are questions or ongoing test
                 try {
                     $level = Level::where('level', '=', ($this->level_id)*100)->first(); //find the next level
                     $this->level_id = $level->id;                    
                 } catch (Exception $e) { 
                     return $this->completeTest('No more level to test.',$user);}
-                if ($user->maxile_level > $level->start_maxile_level || $level->start_maxile_level >600){ //if user already exceeded current level to test
+                if ($stop_test || $level->start_maxile_level >600){ //if user already exceeded current level to test
                     if (count($this->questions) == count($this->questions()->where('question_answered','>=','1')->get())) {
                         $message = "Diagnostic test completed";
                         return $this->completeTest($message, $user);
