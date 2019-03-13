@@ -142,7 +142,6 @@ class QuestionController extends Controller
 //        if(Gate::denies('modify_question', $question)){
 //            return response()->json(['message'=> 'Access denied. You are not authorized to modify this question.', 'code'=>403],403);
 //        }
-return $request;
         $user = Auth::user();
         if ($question->user_id != $user->id && !$user->is_admin) {
             return response()->json(['message'=> 'Access denied. You are not authorized to modify this question.', 'code'=>403],403);
