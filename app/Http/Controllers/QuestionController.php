@@ -26,9 +26,10 @@ class QuestionController extends Controller
      */
     public function index()
     {
-        $questions = Cache::remember('questions', 15/60, function(){
-            return Question::with('solutions','author','difficulty', 'skill.tracks.level','skill.tracks.field','type','status')->paginate(20);
-        });
+        $questions = Question::with('solutions','author','difficulty', 'skill.tracks.level','skill.tracks.field','type','status')->paginate(20);
+//        $questions = Cache::remember('questions', 15/60, function(){
+  //          return Question::with('solutions','author','difficulty', 'skill.tracks.level','skill.tracks.field','type','status')->paginate(20);
+        //});
 //        return $questions->items();
         return response()->json(['next'=>$questions->nextPageUrl(), 'previous'=>$questions->previousPageUrl(),'num_pages'=>$questions->lastPage(),'questions'=>$questions->items()], 200);
     }
