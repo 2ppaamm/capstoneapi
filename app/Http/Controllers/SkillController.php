@@ -26,14 +26,6 @@ class SkillController extends Controller
         return $skills = Skill::with(['tracks.level','user'])->get();        
     }
 
-    public function create(){
-        $user=Auth::user();
-        $public_tracks = $user->is_admin ? null: Track::whereStatusId(3)->select('id','track')->get();
-        $my_tracks = $user->is_admin? Track::select('id','track')->get():$user->tracks()->select('id','track')->get();
-
-        return response()->json(['statuses'=>\App\Status::select('id','status','description')->get(), 'my_tracks'=>$my_tracks, 'public_tracks'=>$public_tracks, 'level'=>\App\Level::select('id','level')->get()]);
-    }
-
     /**
      * Store a newly created resource in storage.
      *

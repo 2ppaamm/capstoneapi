@@ -109,9 +109,9 @@ class EnrolmentController extends Controller
     public function teacher_houses() {
         $user = Auth::user();
         if ($user->is_admin){
-            $houses = $user->roleHouse()->with(['framework','tracks.owner','tracks.skills.user','tracks.field','tracks.status','tracks.level','enrolledStudents'])->get();
+            $houses = $user->roleHouse()->with('roles')->with(['framework','tracks.owner','tracks.skills.user','tracks.field','tracks.status','tracks.level','enrolledStudents'])->get();
         } else {
-            $houses = House::with(['framework','tracks.owner','tracks.skills.user','tracks.field','tracks.status','tracks.level','enrolledStudents'])->get();
+            $houses = House::with('roles')->with(['framework','tracks.owner','tracks.skills.user','tracks.field','tracks.status','tracks.level','enrolledStudents'])->get();
         }
         foreach ($houses as $class) {
             $class['average_progress']=$class->studentEnrolment->avg('progress');
