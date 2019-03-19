@@ -144,7 +144,7 @@ class Test extends Model
 
         if (!count($new_questions) && count($this->questions)) { //no new question and this user has already tested
 //        if (count($this->questions()->get()) <= $this->questions()->sum('question_answered')){
-            $message = 'Test ended successfully';
+            $message = 'Test '.$this->description.' ended successfully';
             return $this->completeTest($message, $user);
         }
 //        }
