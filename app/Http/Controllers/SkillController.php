@@ -32,6 +32,24 @@ class SkillController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
+    public function create()
+    {
+        $user = Auth::user();
+        if (!$user->is_admin){
+            return response()->json(['message'=>'Only administrators can create a new skills', 'code'=>403],403);
+        }
+
+        return response()->json(['message' => 'Skill create.', 'statuses'=>\App\Status::all(), 'my_tracks'=>$user->tracks, 'public_tracks'=>Track::all(), 'code'=>201]);
+
+    }
+
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
     public function store(CreateSkillRequest $request)
     {
         $user = Auth::user();
