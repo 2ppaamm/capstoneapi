@@ -33,17 +33,16 @@ class DiagnosticController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function index(){
-//for testing        return response()->json(['message' => 'Test question', 'questions'=>Question::where('id','>',880)->where('id','<',890)->get(), 'code'=>201]);
-
-        $courses = Course::where('course', 'LIKE', '%K to 6 Math%')->pluck('id'); //K-6 math course id
-        $user = Auth::user();
+//for testing        return response()->json(['message' => 'Test question', 'questions'=>Question::where('id','>',880)->where('id','<',890)->get(), 'code'=>201]);  
+       $courses = Course::where('course', 'LIKE', '%K to 6 Math%')->pluck('id'); //K-6 math course id'
+       $user = Auth::user();
        $enrolled = $user->validEnrolment($courses); //k-6 courses enrolled in
 
         if (!count($enrolled)) return response()->json(['message'=>'Not properly enrolled or first time user', 'code'=>203]);
 
         $test = count($user->currenttest)<1 ? !count($user->completedtests) ? 
         $user->tests()->create(['test'=>$user->name."'s First Diagnostic test",'description'=> $user->name."'s diagnostic test", 'diagnostic'=>TRUE, 'level_id'=>2]):
-        $user->tests()->create(['test'=>$user->name."'s Daily test",'description'=> $user->name."'s Daily Test", 'diagnostic'=>FALSE]):
+        $user->tests()->create(['test'=>$user->name."'s ".date("m/d/Y")." test",'description'=> $user->name."'s ".date("m/d/Y")." Test", 'diagnostic'=>FALSE]):
         $user->currenttest[0];
         return $test->fieldQuestions($user);                // output test questions
     }

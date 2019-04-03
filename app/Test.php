@@ -98,12 +98,12 @@ class Test extends Model
                     $track->users()->sync([$user->id], false);        //log tracks for user
                 }              
             } elseif (!count($this->questions)) {           // not diagnostic, new test
-                $level = max(min(Level::find(7), Level::whereLevel(round($user->maxile_level/100)*100)->first()), Level::find(2));  // get userlevel
+                $level = max(min(Level::find(7), Level::whereLevel(round($user->maxile_level/100)*100)->first()), Level::find(2));  // get user level
                 $this->level_id = $level->id;
                 $this->save();
 
                 $user->testedTracks()->sync($level->tracks()->pluck('id')->toArray(), false);
-                $tracks_to_test = count($user->tracksFailed) ? $level->tracks->intersect($user->tracksFailed) ? $level->tracks->intersect($user->tracksFailed) : $user->tracksFailed : $level->tracks;                         // test failed tracks
+                $tracks_to_test = count($user->tracksFailed) ? $level->tracks->intersect($user->tracksFailed) ? $level->tracks->intersect($user->tracksFailed) : $user->tracksFailed : null;                         // test failed tracks
                 if (count($tracks_to_test) < Config::get('app.tracks_to_test')) {  
                     $next_level = Level::where('level','>',$level->level)->first();
                     $tracks_to_test = $tracks_to_test->merge($next_level->tracks()->get());
@@ -144,7 +144,7 @@ class Test extends Model
 
         if (!count($new_questions) && count($this->questions)) { //no new question and this user has already tested
 //        if (count($this->questions()->get()) <= $this->questions()->sum('question_answered')){
-            $message = 'Test '.$this->description.' ended successfully';
+            $message = $this->description.' ended successfully';
             return $this->completeTest($message, $user);
         }
 //        }

@@ -79,13 +79,12 @@ class SkillController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(CreateSkillRequest $request, Skill $skill)
+    public function update(Request $request, Skill $skill)
     {
         $logon_user = Auth::user();
         if ($logon_user->id != $skill->user_id && !$logon_user->is_admin) {            
             return response()->json(['message' => 'You have no access rights to update skill','code'=>401], 401);     
         }
-
         if ($request->hasFile('lesson_link')) {
             if (file_exists($skill->lesson_link)) unlink($skill->lesson_link);
             $timestamp = time();
