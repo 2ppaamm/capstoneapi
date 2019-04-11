@@ -15,6 +15,10 @@ class Skill extends Model
     protected $fillable = ['skill', 'description', 'track_id','image', 'status_id', 'user_id', 'lesson_link', 'check'];
 
     // Relationships
+    public function links(){ //lesson_link
+        return $this->hasMany(SkillLink::class);
+    }
+
     public function user(){
         return $this->belongsTo(User::class);
     }
@@ -37,6 +41,10 @@ class Skill extends Model
     //user's skill maxile score
     public function users(){
         return $this->belongsToMany(User::class)->withPivot('skill_test_date','skill_passed','skill_maxile','noOfTries','noOfPasses','difficulty_passed', 'noOfFails')->withTimestamps();
+    }
+
+    public function noOfQuestions(){
+        return $this->questions->count();
     }
 
     public function noOfTries($userid){

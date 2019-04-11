@@ -23,7 +23,7 @@ class SkillController extends Controller
      */
     public function index()
     {
-        return $skills = Skill::with(['tracks.level','user'])->get();        
+        return $skills = Skill::with(['links','tracks.level','user'])->get();        
     }
 
     /**
@@ -59,16 +59,24 @@ class SkillController extends Controller
         $values = $request->all();
         $values['user_id'] = $user->id;
         $skill = Skill::create($values);
-        if ($request->hasFile('lesson_link')) {
+        if ($request->links) {
+            foreach ($request->links as $key=>$link) {
+                $timestamp = time();
+                $new_link = \App\SkillLink::create(['skill_id'=>$skill->id, 'user_id'=>$user->id, 'status_id'=>4, 'link'=>'videos/skills/'.$timestamp.'.mp4']);
+
+                $file = $link->move(public_path('videos/skills'), $timestamp.'.mp4');
+            }
+        }
+/*        if ($request->hasFile('lesson_link')) {
             $timestamp = time();
             $skill->lesson_link = 'videos/skills/'.$timestamp.'.mp4';
 
             $file = $request->lesson_link->move(public_path('videos/skills'), $timestamp.'.mp4');
 
             $skill->save();
-        }
+        } */
         $skill->tracks()->sync(json_decode($request->track_ids), FALSE);
-        return response()->json(['message' => 'Skill correctly added.', 'skill'=>$skill,'code'=>201]);
+        return response()->json(['message' => 'Skill correctly added.', 'skill'=>$skill,'links'=>$skill->links,'code'=>201]);
 
     }
 
@@ -85,15 +93,20 @@ class SkillController extends Controller
         if ($logon_user->id != $skill->user_id && !$logon_user->is_admin) {            
             return response()->json(['message' => 'You have no access rights to update skill','code'=>401], 401);     
         }
-        if ($request->hasFile('lesson_link')) {
-            if (file_exists($skill->lesson_link)) unlink($skill->lesson_link);
-            $timestamp = time();
-            $skill->lesson_link = 'videos/skills/'.$timestamp.'.mp4';
+        if ($request->links) {
+            foreach ($request->links as $key=>$link) {
+                $timestamp = time();
+                $new_link = \App\SkillLink::create(['skill_id'=>$skill->id, 'user_id'=>$logon_user->id, 'status_id'=>4, 'link'=>'videos/skills/'.$timestamp.'.mp4']);
 
-            $file = $request->lesson_link->move(public_path('videos/skills'), $timestamp.'.mp4');
-        } else if ($request->lesson_link){
-            $skill->lesson_link = $request->lesson_link;
+                $file = $link->move(public_path('videos/skills'), $timestamp.'.mp4');
+            }
         }
+        if ($request->remove_links) {
+            foreach ($request->remove_links as $key=>$link_id) {
+                \App\SkillLink::findOrFail($link_id)->delete();
+            }
+        }
+
         if ($request->track_ids){
             $skill->tracks()->sync(json_decode($request->track_ids), FALSE);
         }
@@ -111,7 +124,7 @@ class SkillController extends Controller
      */
     public function show(Skill $skill)
     {
-        return response()->json(['message'=>'Skill fetched.', 'skill'=>$skill, 'code'=>201],201);
+        return response()->json(['message'=>'Skill fetched.', 'skill'=>$skill, 'links'=>$skill->links,'code'=>201],201);
     }
 
     /**
@@ -134,6 +147,7 @@ class SkillController extends Controller
         {
             return response()->json(['message'=>'There are tracks that uses this skill. Do you want to delink all the tracks?', 'code'=>'delink_tracks'], 409);
         }
+
         $skill->delete();
         return response()->json(['message'=>'Skill has been deleted.'], 200);
     }
