@@ -3,5 +3,9 @@
 Homestead.yaml
 Homestead.json
 .env
+<<<<<<< HEAD
 /pubic/images
+=======
+/public/images
+>>>>>>> 3375aa208679ab3b50d02337ae5c6053d042b479
 /public/videos
