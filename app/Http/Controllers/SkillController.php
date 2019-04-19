@@ -89,6 +89,7 @@ class SkillController extends Controller
      */
     public function update(Request $request, Skill $skill)
     {
+return "I am here";        
         $logon_user = Auth::user();
         if ($logon_user->id != $skill->user_id && !$logon_user->is_admin) {            
             return response()->json(['message' => 'You have no access rights to update skill','code'=>401], 401);     
