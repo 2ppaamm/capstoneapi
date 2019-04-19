@@ -97,7 +97,7 @@ class SkillController extends Controller
             foreach ($request->links as $key=>$link) {
                 $timestamp = time();
                 $new_link = \App\SkillLink::create(['skill_id'=>$skill->id, 'user_id'=>$logon_user->id, 'status_id'=>4, 'link'=>'videos/skills/'.$timestamp.'.mp4']);
-
+return($new_link);
                 $file = $link->move(public_path('videos/skills'), $timestamp.'.mp4');
             }
         }
