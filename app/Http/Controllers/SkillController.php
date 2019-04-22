@@ -50,16 +50,16 @@ class SkillController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(CreateSkillRequest $request)
+    public function store(Request $request)
     {
         $user = Auth::user();
         if (!$user->is_admin){
             return response()->json(['message'=>'Only administrators can create a new skills', 'code'=>403],403);
         }
-        $values = $request->all();
+        $values = $request->except('links');
         $values['user_id'] = $user->id;
         $skill = Skill::create($values);
-        if ($request->links) {
+        if ($request->hasFile('links')) {
             foreach ($request->links as $key=>$link) {
                 $timestamp = time();
                 $new_link = \App\SkillLink::create(['skill_id'=>$skill->id, 'user_id'=>$user->id, 'status_id'=>4, 'link'=>'videos/skills/'.$timestamp.'.mp4']);
@@ -89,7 +89,6 @@ class SkillController extends Controller
      */
     public function update(Request $request, Skill $skill)
     {
-return "I am here";        
         $logon_user = Auth::user();
         if ($logon_user->id != $skill->user_id && !$logon_user->is_admin) {            
             return response()->json(['message' => 'You have no access rights to update skill','code'=>401], 401);     
@@ -98,7 +97,7 @@ return "I am here";
             foreach ($request->links as $key=>$link) {
                 $timestamp = time();
                 $new_link = \App\SkillLink::create(['skill_id'=>$skill->id, 'user_id'=>$logon_user->id, 'status_id'=>4, 'link'=>'videos/skills/'.$timestamp.'.mp4']);
-return($new_link);
+
                 $file = $link->move(public_path('videos/skills'), $timestamp.'.mp4');
             }
         }
