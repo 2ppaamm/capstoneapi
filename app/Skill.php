@@ -89,7 +89,7 @@ class Skill extends Model
             $noOfFails -= 1;
         }
         if (!$correct) {
-            $noOfPasses = 0;
+            $noOfPasses = max(0, $noOfPasses + 1);
             $noOfFails += 1;
         }
         // determine difficulty passed level

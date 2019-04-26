@@ -70,6 +70,7 @@ class Question extends Model
         $record = ['question_answered' => TRUE,
             'answered_date' => new DateTime('now'),
             'correct' =>$correctness,
+            'test_id'=>$test->id,
             'attempts' => $this->attempts($user->id) + 1];
         return $this->users()->sync([$user->id=>$record]);
     }
