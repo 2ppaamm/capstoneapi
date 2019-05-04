@@ -41,9 +41,9 @@ class DiagnosticController extends Controller
         if (!count($enrolled)) return response()->json(['message'=>'Not properly enrolled or first time user', 'code'=>203]);
 
         $test = count($user->currenttest)<1 ? !count($user->completedtests) ? 
-        $user->tests()->create(['test'=>$user->name."'s First Diagnostic test",'description'=> $user->name."'s diagnostic test", 'diagnostic'=>TRUE, 'level_id'=>2]):
-        $user->tests()->create(['test'=>$user->name."'s ".date("m/d/Y")." test",'description'=> $user->name."'s ".date("m/d/Y")." Test", 'diagnostic'=>FALSE]):
-        $user->currenttest[0];
+            $user->tests()->create(['test'=>$user->name."'s First Diagnostic test",'description'=> $user->name."'s diagnostic test", 'diagnostic'=>TRUE, 'level_id'=>2]):
+            $user->tests()->create(['test'=>$user->name."'s ".date("m/d/Y")." test",'description'=> $user->name."'s ".date("m/d/Y")." Test", 'diagnostic'=>FALSE]):
+            $user->currenttest[0];
         return $test->fieldQuestions($user);                // output test questions
     }
 
@@ -93,43 +93,32 @@ class DiagnosticController extends Controller
      */
     public function answer(CreateQuizAnswersRequest $request){
         $user = Auth::user();
-        $old_maxile = $user->maxile_level;
         $test = \App\Test::find($request->test);
         if (!$test){
             return response()->json(['message' => 'Invalid Test Number', 'code'=>405], 405);    
         }
 
         foreach ($request->question_id as $key=>$question_id) {
-            $answered = FALSE;
-            $correctness = FALSE;
             $question = Question::find($question_id);
+            $answer = $request->answer;
             if (!$question){
                 $user->errorlogs()->create(['error'=>'Question '.$question_id.' not found']);
                 return response()->json(['message'=>'Error in question. No such question', 'code'=>403]);                
             }
-           $assigned = $question->tests()->whereTestId($test->id)->first();
+            $assigned = $question->tests()->whereTestId($test->id)->first();
             if (!$assigned) {
                 $user->errorlogs()->create(['error'=>'Question '.$question_id.' not assigned to '. $user->name]);
                 return response()->json(['message'=>'Question not assigned to '. $user->name, 'code'=>403]);                                
             }
-            if ($question->type_id == 2) {
-                $answers = $request->answer[$key];
-                $correct3 = sizeof($answers) > 3 ? $answers[3] == $question->answer3 ? TRUE : FALSE : TRUE;
-                $correct2 = sizeof($answers) > 2 ? $answers[2] == $question->answer2 ? TRUE : FALSE : TRUE;
-                $correct1 = sizeof($answers) > 1 ? $answers[1] == $question->answer1 ? TRUE : FALSE : TRUE;
-                $correct = sizeof($answers) > 0 ? $answers[0] == $question->answer0 ? TRUE : FALSE : TRUE;
-                $correctness = $correct + $correct1 + $correct2 + $correct3 > 3? TRUE: FALSE;
-            } else $correctness = $question->correct_answer != $request->answer[$key] ? FALSE:TRUE;
+            $correctness = $question->correctness($user, $answer[$key]);
             $answered = $question->answered($user, $correctness, $test); // update question_user
             $track = $question->skill->tracks()->first(); // change logic, take the first track
 
-//            $track = $question->skill->tracks->intersect($user->testedTracks()->orderBy('updated_at','desc')->get())->first();
             // calculate and saves maxile at 3 levels: skill, track and user
-            $skill_maxile = $question->skill->handleAnswer($user->id, $question->difficulty_id, $correctness, $track, $test->diagnostic);
-            $track_maxile = $track->calculateMaxile($user, $test->diagnostic);
+            $skill_maxile = $question->skill->handleAnswer($user->id, $question->difficulty_id, $correctness, $track, $test);
+            $track_maxile = $track->calculateMaxile($user, $correctness, $test);
             $field_maxile = $user->storefieldmaxile($track_maxile, $track->field_id);
-            $test->level_id = max($skill_maxile/100,$test->level_id);
-            $test->save();
+
             // find the class
             if (!$test->diagnostic) {
                 $house = $track->houses->intersect(\App\House::whereIn('id', Enrolment:: whereUserId($user->id)->whereRoleId(6)->pluck('house_id'))->get())->first();

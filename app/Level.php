@@ -34,6 +34,10 @@ class Level extends Model
         return $this->belongsTo('Status');
     }
 
+    public function scopeNext() {
+        return $this->belongsTo(Level::class)->where('start_maxile_level','>', $this->start_maxile_level)->orderBy('start_maxile_level','asc')->first();
+    }
+
     public function scopeMaxilePerTrack(){
         return 100/$this->tracks()->count();
     }

@@ -11,7 +11,7 @@ class Test extends Model
     use RecordLog;
     
     protected $hidden = ['user_id', 'created_at','updated_at'];
-    protected $fillable = ['test', 'description', 'diagnostic', 'number_of_tries_allowed','start_available_time', 'end_available_time','due_time','result','image', 'status_id','level_id'];
+    protected $fillable = ['test', 'description', 'diagnostic', 'number_of_tries_allowed','start_available_time', 'end_available_time','due_time','result','image', 'status_id'];
 
     //relationship
     public function questions(){
@@ -71,26 +71,23 @@ class Test extends Model
         $questions = collect([]);
         $message = '';
         if (!count($this->uncompletedQuestions)) {    // no more questions
-            if ($this->diagnostic) {                  // if diagnostic check new level, get qns
+            if ($this->diagnostic) {             // if diagnostic check new level, get qns
                 $stop_test = $this->diagnostic_error()->whereCorrect(FALSE)->count()>=5 ? True : False; //check if user is testing below 
-                if (count($this->questions) && $this->level_id) {        // if there are questions or ongoing test
-                    try {
-                        $level = Level::where('level', '=', ($this->level_id)*100)->first(); //find the next level
-                        $this->level_id = $level->id;                    
-                    } catch (Exception $e) { 
-                        return $this->completeTest('No more level to test.',$user);}
-                    if ($stop_test || $level->start_maxile_level >600){ //if user already exceeded current level to test
-                        if (count($this->questions) == count($this->questions()->where('question_answered','>=','1')->get())) {
-                            $message = "Diagnostic test completed";
-                            return $this->completeTest($message, $user);
-                        }                        
-                    }
-      
-                } else {
-                    $level=Level::find(2);
-                    $this->level_id = $level->id;
-                }
+                $this->level_id =  (!count($this->questions) || !$this->level_id) ? 2 : $this->level_id+1;
                 $this->save();
+
+                try {
+                     $level = Level::find($this->level_id);
+                } catch (Exception $e) { 
+                    return $this->completeTest('Cannot find level to test.',$user);
+                }
+                
+                if ($stop_test || $level->start_maxile_level >600){ //if user already exceeded current level to test
+                    if (count($this->questions) == count($this->questions()->where('question_answered','>=','1')->get())) {
+                        $message = "Diagnostic test completed";
+                        return $this->completeTest($message, $user);
+                    }                        
+                }
                 
                 // get questions, then log track, assign question to user
                 foreach ($level->tracks as $track) {  //diagnostic => 1 track 1 question
@@ -98,7 +95,7 @@ class Test extends Model
                     $track->users()->sync([$user->id], false);        //log tracks for user
                 }              
             } elseif (!count($this->questions)) {           // not diagnostic, new test
-                $level = Level::find(max(min(7, round($user->maxile_level/100)*100), 2));  // get user level
+                $level = Level::whereLevel(max(200,min(700,round($user->maxile_level/100)*100)))->first();                                // get user general level
                 $this->level_id = $level->id;
                 $this->save();
 

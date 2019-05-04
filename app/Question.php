@@ -57,12 +57,24 @@ class Question extends Model
         return $num_attempts ? $num_attempts->attempts:1;
     }
 
+    public function correctness($user, $answers){
+            $correctness = FALSE;
+            if ($this->type_id == 2) {
+                $correct3 = sizeof($answers) > 3 ? $answers[3] == $this->answer3 ? TRUE : FALSE : TRUE;
+                $correct2 = sizeof($answers) > 2 ? $answers[2] == $this->answer2 ? TRUE : FALSE : TRUE;
+                $correct1 = sizeof($answers) > 1 ? $answers[1] == $this->answer1 ? TRUE : FALSE : TRUE;
+                $correct = sizeof($answers) > 0 ? $answers[0] == $this->answer0 ? TRUE : FALSE : TRUE;
+                $correctness = $correct + $correct1 + $correct2 + $correct3 > 3? TRUE: FALSE;
+            } else $correctness = $this->correct_answer != $answers ? FALSE:TRUE;
+        return $correctness;
+    }
     /*
      *  Assigns skill to users, questions to users, questions to test
      */
     public function assigned($user, $test){
         $this->skill->users()->sync([$user->id], false);
         $this->tests()->sync([$test->id =>['user_id'=>$user->id]], false);
+        $test->skills()->sync([$this->skill_id], false);
         return $test;
     }
 
@@ -70,8 +82,8 @@ class Question extends Model
         $record = ['question_answered' => TRUE,
             'answered_date' => new DateTime('now'),
             'correct' =>$correctness,
-            'test_id'=>$test->id,
+            'user_id' => $user->id,
             'attempts' => $this->attempts($user->id) + 1];
-        return $this->users()->sync([$user->id=>$record]);
+        return $this->tests()->sync([$test->id=>$record], false);
     }
 }

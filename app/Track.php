@@ -104,8 +104,13 @@ class Track extends Model
         return $track_maxile;        
     }
 
-    public function calculateMaxile($user, $diagnostic){
-        $track_maxile = $user->skill_user()->whereIn('skill_id', $this->skills()->pluck('id'))->avg('skill_maxile');
+    public function calculateMaxile($user, $correctness, $diagnostic){
+        $track_maxile = $diagnostic ? $correctness ? $this->level->end_maxile_level : 0 : 0; //diagnostic and correct
+        // if not diagnostic
+        if (!$diagnostic) {
+            $average_maxile_tested = $user->skill_user()->whereIn('skill_id',$this->skills()->pluck('id'))->avg('skill_maxile');
+            $track_maxile = min($average_maxile_tested ,$this->level->end_maxile_level);
+        }                
         $record = [
             'track_test_date' => new DateTime('now'),
             'track_passed' => $track_maxile < $this->level->end_maxile_level ? FALSE : TRUE,
