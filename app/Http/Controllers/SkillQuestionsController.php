@@ -24,7 +24,7 @@ class SkillQuestionsController extends Controller
      */
     public function index(Skill $skill)
     {        
-        $questions = $skill->questions->random(5);
+        $questions = $skill->questions;
 
         if (sizeof($questions) <1) {
             return response() ->json(['message' => 'There is no question needed for this skill.', 'code'=>404], 404);
