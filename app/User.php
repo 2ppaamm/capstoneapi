@@ -289,12 +289,10 @@ class User extends Model implements AuthenticatableContract,
  //       $user_maxile = $highest_level_passed ? number_format(max($this->testedTracks()->whereIn('track_id',$highest_level_passed->tracks()->pluck('id'))->avg('track_maxile'), $highest_level_passed->start_maxile_level), 2,'.','') : 0;
         if ($test->diagnostic){
             $user_maxile = $this->testedTracks()->avg('track_maxile');
+        } elseif ($test->noOfSkillsPassed > 0){
+                $user_maxile = max(Level::find($test->level_id)->start_maxile_level,$test->test_maxile,$this->maxile_level);
         } else {
-            if ($test->noOfSkillsPassed > 0){
-                $user_maxile = max(min(Level::find($test->level_id)->start_maxile_level,$test->test_maxile/$test->noOfSkillsPassed),$this->maxile_level);
-            } else {
                 $user_maxile = $this->maxile_level;
-            }
         }
         $this->maxile_level = $user_maxile;
         $this->last_test_date = new DateTime('now');

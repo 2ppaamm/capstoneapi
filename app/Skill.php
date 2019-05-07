@@ -114,9 +114,8 @@ class Skill extends Model
             $skill_maxile = $difficulty_passed ? $skill_passed ? $track->level->end_maxile_level:$track->level->start_maxile_level+(100/Config::get('app.difficulty_levels')*$difficulty_passed) : 0; 
             if ($skill_passed) {
                 if (!$test->diagnostic) {
-                    $test->test_maxile += $skill_maxile/$track->skills()->count();
                     $test->noOfSkillsPassed += 1;
-                    $test->test_maxile = max($test->test_maxile,\App\Level::find($test->level_id)->end_maxile_level);
+                    $test->test_maxile = max($test->test_maxile,\App\Level::find($this->tracks()->first()->level_id)->end_maxile_level);
                     $test->save();
                 }
             }
