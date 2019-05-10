@@ -10,8 +10,8 @@ return array(
     |
     */
 
-//     'domain'        => 'pamelalim.auth0.com',
-     'domain'        => 'allgiftedllc.au.auth0.com',
+     'domain'        => 'pamelalim.auth0.com',
+//     'domain'        => 'allgiftedllc.au.auth0.com',
     /*
     |--------------------------------------------------------------------------
     |   Your APP id
@@ -19,8 +19,8 @@ return array(
     |   As set in the auth0 administration page
     |
     */
-//     'client_id'     => 'eVJv6UFM9GVdukBWiURczRCxmb6iaUYG',
-     'client_id'     => 'bs3jSKz2Ewrye8dD2qRVrD0Tra2tOqHC',
+     'client_id'     => 'eVJv6UFM9GVdukBWiURczRCxmb6iaUYG',
+//     'client_id'     => 'bs3jSKz2Ewrye8dD2qRVrD0Tra2tOqHC',
 
     /*
     |--------------------------------------------------------------------------
@@ -29,8 +29,8 @@ return array(
     |   As set in the auth0 administration page
     |
     */
-//     'client_secret' => '5KuhcAgVdBEaaa6SjwEapxoDg13DGYRoDYyLE9xX59A6YUUdqn9a6Hz0zwQCNdfa',
-     'client_secret' => 'qb0mNnZVLMt1Q8mxVhxdTQDpx1FAYkeg3AsaztRI89IcqUgZoyOsNxQ3-jhnpNbb',
+     'client_secret' => '5KuhcAgVdBEaaa6SjwEapxoDg13DGYRoDYyLE9xX59A6YUUdqn9a6Hz0zwQCNdfa',
+//     'client_secret' => 'qb0mNnZVLMt1Q8mxVhxdTQDpx1FAYkeg3AsaztRI89IcqUgZoyOsNxQ3-jhnpNbb',
    /*
     |--------------------------------------------------------------------------
     |   The redirect URI

@@ -11,7 +11,7 @@ Route::resource('/', 'DashboardController');
 
 Route::post('/qa', 'CheckAnswerController@index');
 Route::post('/qa/answer', 'CheckAnswerController@answer');
-
+Route::get('/api/protected', 'DashboardController@index');
 Route::resource('users', 'UserController');
 Route::get('users/{users}/performance', 'UserController@performance');
 Route::post('courses/{courses}', 'CourseController@copy');
@@ -46,13 +46,12 @@ Route::resource('enrolments', 'EnrolmentController');
 Route::resource('skills.questions', 'SkillQuestionsController', ['except' => ['edit', 'create']]);
 Route::delete('tracks/{track}/skills','TrackSkillController@deleteSkills');
 Route::resource('tracks.skills', 'TrackSkillController', ['except' => ['edit', 'create']]);
+Route::get('/enrols/users', 'EnrolmentController@user_houses');
+Route::get('/enrols/teachers', 'EnrolmentController@teacher_houses');
 
 Route::get('users/{username}/logs','LogController@show');
 Route::get('logs', 'LogController@index');
 
-Route::get('/api/protected', 'DashboardController@index');
-Route::get('/enrols/users', 'EnrolmentController@user_houses');
-Route::get('/enrols/teachers', 'EnrolmentController@teacher_houses');
 Route::post('/test/protected', 'DiagnosticController@index');
 Route::post('test/mastercode', 'DiagnosticController@store');
 Route::post('/test/answers', 'DiagnosticController@answer');
