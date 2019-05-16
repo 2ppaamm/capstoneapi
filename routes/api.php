@@ -19,7 +19,7 @@ Route::post('courses/{courses}', 'CourseController@copy');
 Route::get('questions/search_init', 'QuestionController@search_init');
 Route::post('questions/search', 'QuestionController@search');
 //Route::put('courseimage/{courses}', 'CourseController@updateImage');
-Route::get('/videos','VideoController@index');
+Route::get('videos','VideoController@index');
 Route::resource('videos', 'VideoController', ['except' =>['create', 'edit']]);
 Route::resource('courses', 'CourseController');
 Route::resource('difficulties', 'DifficultyController');
