@@ -76,7 +76,7 @@ class DiagnosticController extends Controller
 
             Mail::send([],[], function ($message) use ($note) {
                 $message->from(env("MAIL_ORDER_ADDRESS"), 'All Gifted Admin')
-                        ->to('\''.$user->email.'\'')->cc('info.allgifted@gmail.com')
+                        ->to('japher@singnet.com.sg')->cc('info.allgifted@gmail.com')
                         ->subject('Successful Enrolment')
                         ->setBody($note, 'text/html');
             });            
