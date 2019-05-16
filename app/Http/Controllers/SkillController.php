@@ -36,7 +36,7 @@ class SkillController extends Controller
     {
         $user = Auth::user();
         if (!$user->is_admin){
-            return response()->json(['message'=>'Only administrators can create a new skills', 'code'=>403],403);
+            return response()->json(['message'=>'Only administrators can create a new skill.', 'code'=>403],403);
         }
 
         return response()->json(['message' => 'Skill create.', 'statuses'=>\App\Status::all(), 'my_tracks'=>$user->tracks, 'public_tracks'=>Track::all(), 'code'=>201]);
@@ -103,7 +103,11 @@ class SkillController extends Controller
         }
         if ($request->remove_links) {
             foreach ($request->remove_links as $key=>$link_id) {
-                \App\SkillLink::findOrFail($link_id)->delete();
+                if ($link_id != -1) {
+                   \App\SkillLink::findOrFail($link_id)->delete();
+               } else {
+                $skill->lesson_link = null;
+               }
             }
         }
 

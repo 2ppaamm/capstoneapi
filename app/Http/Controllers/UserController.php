@@ -54,8 +54,31 @@ class UserController extends Controller
             return response()->json(['message' => 'User correctly added', 'data' => $user, 'code' => 201]);
         } catch (\Throwable $th) {
             return response()->json(['message' => $th->getMessage(), 'data' => $user, 'code' => 200]);
-            //throw $th;
         }
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function reset($id)
+    {
+        $logon_user = Auth::user();
+        if ($logon_user->id && !$logon_user->is_admin) {
+            return response()->json(['message' => 'You have no access rights to reset user','code'=>401], 401);
+        }
+        $user = User::findorfail($id);
+        $user->myQuestions()->detach();
+        $user->testedTracks()->detach();
+        $user->fields()->detach();
+        $user->skill_user()->detach();
+        $user->tests()->detach();
+        $user->tests()->delete();
+        $user->maxile_level = 0;
+        $user->save();
+        return response()->json(['message' => 'Reset for '.$user->name.' is done. There is no more record of activity of student. The game_level of '.$user->game_level .' is maintained.', 'data' => $user, 'code' => 200]);
     }
 
     /**
@@ -119,7 +142,7 @@ class UserController extends Controller
      */
     public function destroy($id)
     {
-        $users = findorfail($id);
+        $users = User::findorfail($id);
         $logon_user = Auth::user();
         if (!$logon_user->is_admin) {
             return response()->json(['message' => 'You have no access rights to delete user', 'data'=>$user, 'code'=>401], 500);
