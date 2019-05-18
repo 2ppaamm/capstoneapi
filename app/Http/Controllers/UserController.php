@@ -148,4 +148,20 @@ class UserController extends Controller
             'performance'=>User::whereId($id)->with('tracksPassed','completedTests','fieldMaxile','tracksFailed','incompletetests')->get(),'code'=>200
     ], 200);
     }
+
+    public function reset ($id) {
+        $user = User::findorfail($id);
+        $logon_user = Auth::user();
+        if (!$logon_user->is_admin) {
+            return response()->json(['message' => 'You have no access rights to view user','code'=>401], 401);
+        }
+        $user->maxile_level = 0;
+        $user->save();
+        $user->myQuestions()->detach();
+        $user->testedTracks()->detach();
+        $user->tests()->detach();
+        $user->enrolment()->delete();
+
+        return response()->json(['message'=>'User account reset done. The game_level is kept at '.$user->game_level.'.','code'=>200], 200);
+    }
 }

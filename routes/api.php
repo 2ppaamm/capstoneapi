@@ -13,6 +13,7 @@ Route::post('/qa', 'CheckAnswerController@index');
 Route::post('/qa/answer', 'CheckAnswerController@answer');
 Route::get('/api/protected', 'DashboardController@index');
 Route::resource('users', 'UserController');
+Route::post('users/{users}/reset','UserController@reset');
 Route::get('users/{users}/performance', 'UserController@performance');
 Route::post('courses/{courses}', 'CourseController@copy');
 Route::get('questions/search_init', 'QuestionController@search_init');
