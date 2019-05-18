@@ -93,7 +93,7 @@ return [
     |
     */
 
-    'password' => env('MAIL_PASSWORD', 'Japherlim01'),
+    'password' => env('MAIL_PASSWORD', 'J@ph3rl1m01'),
 
     /*
     |--------------------------------------------------------------------------
