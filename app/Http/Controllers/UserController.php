@@ -65,6 +65,7 @@ class UserController extends Controller
      */
     public function reset($id)
     {
+return "hello";
         $logon_user = Auth::user();
         if ($logon_user->id && !$logon_user->is_admin) {
             return response()->json(['message' => 'You have no access rights to reset user','code'=>401], 401);
