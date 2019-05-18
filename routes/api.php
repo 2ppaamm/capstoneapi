@@ -24,7 +24,7 @@ Route::resource('courses', 'CourseController');
 Route::resource('difficulties', 'DifficultyController');
 Route::resource('fields', 'FieldController');
 Route::resource('houses', 'HouseController');
-Route::resource('videos', 'VideoController', ['except' =>['create', 'edit']]);
+//Route::resource('videos', 'VideoController', ['except' =>['create', 'edit']]);
 Route::resource('levels', 'LevelController', ['except' =>['create', 'edit']]);
 Route::resource('permissions', 'PermissionController', ['except' =>['create', 'edit']]);
 Route::resource('roles', 'RoleController', ['except' =>['create', 'edit']]);
