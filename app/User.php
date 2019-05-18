@@ -80,6 +80,10 @@ class User extends Model implements AuthenticatableContract,
         return $this->hasMany(Skill::class);              //originator of skills
     }
 
+    public function videos(){
+        return $this->hasMany(Video::class);              //originator of skills
+    }
+
     public function fields(){
         return $this->belongsToMany(Field::class)->withPivot('field_maxile', 'field_test_date', 'month_achieved')->withTimestamps();
     }
