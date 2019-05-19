@@ -20,7 +20,7 @@ return array(
     |
     */
 //     'client_id'     => 'eVJv6UFM9GVdukBWiURczRCxmb6iaUYG',
-     'client_id'     => 'bs3jSKz2Ewrye8dD2qRVrD0Tra2tOqHC',
+   'client_id'     => 'bs3jSKz2Ewrye8dD2qRVrD0Tra2tOqHC',
 
     /*
     |--------------------------------------------------------------------------
@@ -30,7 +30,7 @@ return array(
     |
     */
 //     'client_secret' => '5KuhcAgVdBEaaa6SjwEapxoDg13DGYRoDYyLE9xX59A6YUUdqn9a6Hz0zwQCNdfa',
-     'client_secret' => 'qb0mNnZVLMt1Q8mxVhxdTQDpx1FAYkeg3AsaztRI89IcqUgZoyOsNxQ3-jhnpNbb',
+   'client_secret' => 'qb0mNnZVLMt1Q8mxVhxdTQDpx1FAYkeg3AsaztRI89IcqUgZoyOsNxQ3-jhnpNbb',
    /*
     |--------------------------------------------------------------------------
     |   The redirect URI
