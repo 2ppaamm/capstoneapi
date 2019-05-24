@@ -113,6 +113,7 @@ class EnrolmentController extends Controller
         } else {
             $houses = House::with('roles')->with(['framework','tracks.owner','tracks.skills.user','tracks.field','tracks.status','tracks.level','enrolledStudents'])->get();
         }
+
         foreach ($houses as $class) {
             $class['average_progress']=$class->studentEnrolment->avg('progress');
             $class['lowest_progress'] = $class->studentEnrolment->min('progress');

@@ -27,7 +27,7 @@ class UserController extends Controller
      */
     public function index()
     {
-        $user = Auth::user();
+        $user = Auth::user();        
         return $user->is_admin ? response()->json(User::with('enrolledClasses.roles', 'logs')->get()): response()->json(['message' =>'not authorized to view users', 'code'=>401], 401);
     }
 
@@ -79,6 +79,25 @@ class UserController extends Controller
         $user->maxile_level = 0;
         $user->save();
         return response()->json(['message' => 'Reset for '.$user->name.' is done. There is no more record of activity of student. The game_level of '.$user->game_level .' is maintained.', 'data' => $user, 'code' => 200]);
+    }
+
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function diagnostic($id)
+    {
+        $logon_user = Auth::user();
+        if ($logon_user->id && !$logon_user->is_admin) {
+            return response()->json(['message' => 'You have no access rights to set user to do diagnostic','code'=>401], 401);
+        }
+        $user = User::findorfail($id);
+        $user->diagnostic = TRUE;
+        $user->save();
+        return response()->json(['message' => 'Set Diagnostic for '.$user->name.' is done.', 'data' => $user, 'code' => 200]);
     }
 
     /**

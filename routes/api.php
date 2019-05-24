@@ -15,6 +15,8 @@ Route::get('/api/protected', 'DashboardController@index');
 Route::resource('users', 'UserController');
 Route::get('/users/{users}/reset','UserController@reset');
 Route::get('/users/{users}/performance', 'UserController@performance');
+Route::post('/users/{users}/diagnostic', 'UserController@diagnostic');
+Route::get('/report/{users}', 'DiagnosticController@report');
 Route::post('courses/{courses}', 'CourseController@copy');
 Route::get('questions/search_init', 'QuestionController@search_init');
 Route::post('questions/search', 'QuestionController@search');
