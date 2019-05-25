@@ -296,8 +296,8 @@ class User extends Model implements AuthenticatableContract,
         if ($test->diagnostic){
             $user_maxile = $this->testedTracks()->avg('track_maxile');
         } elseif ($test->noOfSkillsPassed > 0){
-            $highest_passed = $user->tracksPassed()->max('level_id');
-            $noPassed = count($user->tracksPassed()->whereLevelId($highest_passed)->get());
+            $highest_passed = $this->tracksPassed()->max('level_id');
+            $noPassed = count($this->tracksPassed()->whereLevelId($highest_passed)->get());
             $totalHighest = count(\App\Track::whereLevelId($highest_passed)->get());
             $maxile = $noPassed/$totalHighest*100 + \App\Level::find($highest_passed)->start_maxile_level;
             $user_maxile = max($maxile,$this->maxile_level);
