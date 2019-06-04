@@ -182,7 +182,8 @@ class DiagnosticController extends Controller
         }
         //maxile
         $next_level=Level::whereStartMaxileLevel((int)($user->maxile_level/100)*100)->first();
-        $new_maxile = $user->calculateUserMaxile($latest_test);
+        
+        $new_maxile = $latest_test ? $user->calculateUserMaxile($latest_test) : 0;
 
         $note = $note."\x0D\x0DYou did a total of another ".(count($user->tests)-1)." quizzes. Your results are: \x0D".$result.
 
