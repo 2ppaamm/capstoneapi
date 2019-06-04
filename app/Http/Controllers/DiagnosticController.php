@@ -150,6 +150,7 @@ class DiagnosticController extends Controller
         }
 
         $user = User::findOrFail($id);
+        $latest_test = $user->tests()->orderBy('start_available_time','desc')->first();
 
         $result = null;
         $note = null;
@@ -157,7 +158,6 @@ class DiagnosticController extends Controller
         if (count($user->tests)<1) {
             $result="No test administered";      
         } else {
-            $latest_test = $user->tests()->orderBy('start_available_time','desc')->first();
             $diagnostic_status = !$user->tests()->first()->pivot->completed_date ? "not completed." : "completed on ".$user->tests()->first()->pivot->completed_date; 
  
             $note = "Dear ".$user->name.",\x0D\x0DYou first enrolled on ".$user->enrolment()->first()->start_date.". Your diagnostic test was administered on ".$user->tests()->first()->pivot->created_at." and was ".$diagnostic_status;
