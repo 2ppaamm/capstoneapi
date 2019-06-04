@@ -299,7 +299,7 @@ class User extends Model implements AuthenticatableContract,
         } elseif ($test->noOfSkillsPassed > 0){
             $highest_passed = $this->tracksPassed()->max('level_id');
             $noPassed = count($this->tracksPassed()->whereLevelId($highest_passed)->get());
-            $totalHighest = count(\App\Track::whereLevelId($highest_passed)->get());
+            $totalHighest = max(count(\App\Track::whereLevelId($highest_passed)->get()),1);
             $maxile = $noPassed/$totalHighest*100 + \App\Level::find($highest_passed)->start_maxile_level;
             $user_maxile = max($maxile,$this->maxile_level);
         } else {
