@@ -38,8 +38,8 @@ class DiagnosticController extends Controller
        $enrolled = $user->validEnrolment($courses); //k-6 courses enrolled in
 
 //        if (!count($enrolled)) return response()->json(['message'=>'Not properly enrolled or first time user', 'code'=>203]);
-        $test = count($user->currenttest)<1 || $user->diagnostic ? !count($user->completedtests) ? 
-            $user->tests()->create(['test'=>$user->name."'s Diagnostic test",'description'=> $user->name."'s diagnostic test", 'start_available_time'=> date('Y-m-d', strtotime('-1 day')), 'end_available_time'=>date('Y-m-d', strtotime('+1 year')),'diagnostic'=>TRUE, 'level_id'=>2]):
+        $test = count($user->currenttest)<1 ? !count($user->completedtests) || $user->diagnostic ? 
+            $user->tests()->create(['test'=>$user->name."'s Diagnostic test",'description'=> $user->name."'s diagnostic test ".date('Y-m-d',strtotime('0 day')), 'start_available_time'=> date('Y-m-d', strtotime('-1 day')), 'end_available_time'=>date('Y-m-d', strtotime('+1 year')),'diagnostic'=>TRUE, 'level_id'=>2]):
             $user->tests()->create(['test'=>$user->name."'s ".date("m/d/Y")." test",'description'=> $user->name."'s ".date("m/d/Y")." Test", 'start_available_time'=> date('Y-m-d', strtotime('-1 day')), 'end_available_time'=>date('Y-m-d', strtotime('+1 year')),'diagnostic'=>FALSE]):
             $user->currenttest[0];
         return $test->fieldQuestions($user);                // output test questions
@@ -90,8 +90,8 @@ class DiagnosticController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function answer(CreateQuizAnswersRequest $request){
-       $user = Auth::user();
-       $test = \App\Test::find($request->test);
+        $user = Auth::user();
+        $test = \App\Test::find($request->test);
         if (!$test){
             return response()->json(['message' => 'Invalid Test Number', 'code'=>405], 405);    
         }
@@ -112,7 +112,7 @@ class DiagnosticController extends Controller
             $answered = $question->answered($user, $correctness, $test); // update question_user
             $track = $question->skill->tracks()->first(); // change logic, take the first track
 
-            // calculate and saves maxile at 3 levels: skill, track and user
+            // calculate and saves maxile at 3 levels: skill, track and user            
             $skill_maxile = $question->skill->handleAnswer($user->id, $question->difficulty_id, $correctness, $track, $test);
             $track_maxile = $track->calculateMaxile($user, $correctness, $test);
             $field_maxile = $user->storefieldmaxile($track_maxile, $track->field_id);
@@ -157,11 +157,14 @@ class DiagnosticController extends Controller
         if (count($user->tests)<1) {
             $result="No test administered";      
         } else {
-            $note = "Dear ".$user->name.",\x0D\x0DYou first enrolled on ".$user->enrolment()->first()->start_date.". Your diagnostic test was administered on ".$user->tests()->first()->pivot->created_at." and was completed on ".$user->tests()->first()->pivot->completed_date;
+            $latest_test = $user->tests()->orderBy('start_available_time','desc')->first();
+            $diagnostic_status = !$user->tests()->first()->pivot->completed_date ? "not completed." : "completed on ".$user->tests()->first()->pivot->completed_date; 
+ 
+            $note = "Dear ".$user->name.",\x0D\x0DYou first enrolled on ".$user->enrolment()->first()->start_date.". Your diagnostic test was administered on ".$user->tests()->first()->pivot->created_at." and was ".$diagnostic_status;
             foreach ($user->tests as $test) {
-                $result = $test->pivot->completed_date ? $result. "\x0DDate of test: ".$test->pivot->completed_date.'  Result:'.$test->pivot->result."%.":$result."\x0DDate of test:".$test->pivot->created_at.":  Did not attempt test";
-                
+                $result = $test->pivot->completed_date ? $result. "\x0DTest: ".$test->description.'  Result:'.$test->pivot->result."%.":$result."\x0DTest:".$test->description.":  Did not complete test.";   
             }
+
         }
         $skillpassed = null; 
         $skillfailed = null;
@@ -173,18 +176,20 @@ class DiagnosticController extends Controller
                 if ($skill->pivot->skill_passed) {
                     $skillpassed = $skillpassed."\x0DSkill: '".$skill->skill."' of Level:".$skill->tracks()->first()->level->description;
                 } else {
-                    $skillfailed = $skillfailed."\x0DSkill: '".$skill->skill."' of Level:".$skill->tracks()->first()->level->description;
+                    $skillfailed = $skillfailed."\x0DSkill: '".$skill->skill."' of Level:".$skill->tracks()->get();
                 }
             }            
         }
         //maxile
-        $next_level=Level::whereStartMaxileLevel($user->maxile_level)->first();
+        $next_level=Level::whereStartMaxileLevel((int)($user->maxile_level/100)*100)->first();
+        $new_maxile = $user->calculateUserMaxile($latest_test);
 
-        $note = $note."\x0D\x0DYou did a total of another ".count($user->tests)." quizzes. Your results are: \x0D".$result.
+        $note = $note."\x0D\x0DYou did a total of another ".(count($user->tests)-1)." quizzes. Your results are: \x0D".$result.
 
-            "\x0D\x0DIn total, you have answered ".count($user->myQuestions)." questions. Out of which you obtained ".$user->myQuestions()->sum('correct')." of them correct. For reference, All Gifted's passing mark is 85%. 
+            "\x0D\x0DIn total, you have answered ".count($user->myQuestions)." questions. Out of which you obtained ".$user->myQuestions()->sum('correct')." of them correct. 
             \x0D\x0DThe skills you passed are: ".$skillpassed."\x0D\x0DThe skills you attempted and did not pass are:".$skillfailed.
-            "\x0D\x0DAs such, your maxile level is now at ".$user->maxile_level.", indicating you are ready to start ".$next_level->description." work.";
+            "\x0D\x0DAs such, your maxile level is now at ".$user->maxile_level.".";
+
         Mail::send([],[], function ($message) use ($user,$note) {
             $message->from(env("MAIL_ORDER_ADDRESS"), 'All Gifted Admin')
                     ->to('info.allgifted@gmail.com')

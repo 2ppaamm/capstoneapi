@@ -289,12 +289,13 @@ class User extends Model implements AuthenticatableContract,
     }
 
     public function calculateUserMaxile($test){        
-//        $level=Track::whereIn('id',\App\Skill_Track::whereIn('skill_id',$test->questions()->pluck('skill_id'))->pluck('track_id')->intersect($this->tracksPassed()->pluck('id')))->max('level_id');     // the highest level of the track passed in this test
-//        $highest_level_passed = Level::find($level);        
-//        $highest_level_passed = Level::whereIn('id', $this->tracksPassed()->pluck('level_id'))->orderBy('level', 'desc')->first(); //highest level passed in this test
- //       $user_maxile = $highest_level_passed ? number_format(max($this->testedTracks()->whereIn('track_id',$highest_level_passed->tracks()->pluck('id'))->avg('track_maxile'), $highest_level_passed->start_maxile_level), 2,'.','') : 0;
+    // 2019-06-04 if diagnostic, check skills passed and calculate maxile
+        $test_tracks = [];
+        foreach ($test->questions as $question){
+            array_push($test_tracks,$question->skill->tracks()->first()->id);
+        }
         if ($test->diagnostic){
-            $user_maxile = $this->testedTracks()->avg('track_maxile');
+            $user_maxile = 100+$this->testedTracks()->whereIn('id',$test_tracks)->avg('track_maxile');
         } elseif ($test->noOfSkillsPassed > 0){
             $highest_passed = $this->tracksPassed()->max('level_id');
             $noPassed = count($this->tracksPassed()->whereLevelId($highest_passed)->get());

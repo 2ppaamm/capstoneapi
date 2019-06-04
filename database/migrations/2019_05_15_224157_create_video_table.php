@@ -39,8 +39,9 @@ class CreateVideoTable extends Migration
     public function down()
     {
         Schema::table('skilllinks', function($table) {
-            $table->dropForeign('video_id')->references('id')->on('videos');
-         });
-        Schema::dropIfExists('videos');
+             $table->dropForeign(['video_id']);
+             $table->dropColumn('video_id');
+        });
+        Schema::drop('videos');
     }
 }

@@ -89,35 +89,39 @@ class Skill extends Model
             $noOfFails = $noOfPasses = $noOfTries = $difficulty_passed =$skill_passed =0;
         }
 
-        if (!$correct) {
-            $noOfFails += 1;
-            if ($difficulty <= $difficulty_passed){   // testing simpler than passed
-               if (!$test->diagnostic){
-                  if ($noOfFails >= Config::get('app.number_to_fail')){
-                     $difficulty_passed = max(0,$difficulty_passed - 1);
-                     $noOfFails = 1;                    
-                  }
-               }
+        if ($test->diagnostic){
+            if ($correct){
+                $skill_passed = TRUE;
+                $difficulty_passed = Config::get('app.difficulty_levels');
             }
-        } else {
-            $noOfPasses += 1;
-            if ($difficulty_passed < $difficulty){  //testing more difficult than passed
-                if ($test->diagnostic || $noOfPasses >= Config::get('app.number_to_pass')) {
-                    $difficulty_passed = $difficulty;
-                    $noOfFails = 0;
-                    $noOfPasses = 1;
+        } else { //if not diagnostic
+            if (!$correct) {
+                $noOfFails += 1;
+                if ($difficulty <= $difficulty_passed){   // testing simpler than passed
+                   if (!$test->diagnostic){
+                      if ($noOfFails >= Config::get('app.number_to_fail')){
+                         $difficulty_passed = max(0,$difficulty_passed - 1);
+                         $noOfFails = 1;                    
+                      }
+                   }
                 }
-            }
-            $skill_passed = $difficulty_passed >= Config::get('app.difficulty_levels') ? TRUE : FALSE;
-            
+            } else {
+                $noOfPasses += 1;
+                if ($difficulty_passed < $difficulty){  //testing more difficult than passed
+                    if ($test->diagnostic || $noOfPasses >= Config::get('app.number_to_pass')) {
+                        $difficulty_passed = $difficulty;
+                        $noOfFails = 0;
+                        $noOfPasses = 1;
+                    }
+                }
+                $skill_passed = $difficulty_passed >= Config::get('app.difficulty_levels') ? TRUE : FALSE;
+            } 
             // calculate skill_maxile
             $skill_maxile = $difficulty_passed ? $skill_passed ? $track->level->end_maxile_level:$track->level->start_maxile_level+(100/Config::get('app.difficulty_levels')*$difficulty_passed) : 0; 
             if ($skill_passed) {
-                if (!$test->diagnostic) {
-                    $test->noOfSkillsPassed += 1;
-                    $test->test_maxile = max($test->test_maxile,\App\Level::find($this->tracks()->first()->level_id)->end_maxile_level);
-                    $test->save();
-                }
+                $test->noOfSkillsPassed += 1;
+                $test->test_maxile = max($test->test_maxile,\App\Level::find($this->tracks()->first()->level_id)->end_maxile_level);
+                $test->save();
             }
         }
 
