@@ -176,7 +176,7 @@ class DiagnosticController extends Controller
                 if ($skill->pivot->skill_passed) {
                     $skillpassed = $skillpassed."\x0DSkill: '".$skill->skill."' of Level:".$skill->tracks()->first()->level->description;
                 } else {
-                    $skillfailed = $skillfailed."\x0DSkill: '".$skill->skill."' of Level:".$skill->tracks()->get();
+                    $skillfailed = $skillfailed."\x0DSkill: '".$skill->skill."' of Level:".$skill->tracks()->first()->level->description;
                 }
             }            
         }
