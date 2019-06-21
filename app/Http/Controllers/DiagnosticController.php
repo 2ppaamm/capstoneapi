@@ -58,7 +58,7 @@ class DiagnosticController extends Controller
         if (count($user->validEnrolment($courses))){
           return response()->json(['message'=>'Already enrolled in course', "code"=>404], 404);  
         }
-        $check_mastercode = Enrolment::whereMastercode($request->mastercode)->first();
+        $check_mastercode = $request->mastercode >0 ? Enrolment::whereMastercode($request->mastercode)->first():null;
         if (!$check_mastercode) return response()->json(['message'=>'Invalid credentials. Please contact us at info.allgifted@gmail.com if you have purchased product.', 'code'=>404], 404);
         if ($check_mastercode->places_alloted) {
 //            $date = new DateTime('now');
