@@ -198,7 +198,7 @@ class DiagnosticController extends Controller
                     ->setBody($note, 'text/html');
         });
 
-        return $note;                        
+        return response()->json(['message' => $note, 'code'=>201], 201);                        
     }
 
 }
