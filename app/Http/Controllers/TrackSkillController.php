@@ -24,7 +24,7 @@ class TrackSkillController extends Controller
      */
     public function index(Track $track)
     {
-        return response() -> json (['message'=>'Track skills received.','skill' => $track->skills, 'code'=>200], 200);
+        return response() -> json (['message'=>'Track skills all received.','skill' => $track->skills()->with('links')->get(), 'code'=>200], 200);
     }
 
     public function list_tracks(Skill $skill)
