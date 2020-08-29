@@ -33,9 +33,16 @@ class DiagnosticController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function index(){
+<<<<<<< HEAD
         $courses = Course::where('course', 'LIKE', '%K to 6 Math%')->pluck('id'); //K-6 math course id'
         $user = Auth::user();
         $enrolled = $user->validEnrolment($courses); //k-6 courses enrolled in
+=======
+       $courses = Course::where('course', 'LIKE', '%K to 6 Math%')->pluck('id'); //K-6 math course id'
+       $user = Auth::user();
+       $enrolled = $user->validEnrolment($courses); //k-6 courses enrolled in
+
+>>>>>>> e2657c997527e489aacbccf624d3b60dea7b7429
         if (!count($enrolled)) return response()->json(['message'=>'Not properly enrolled or first time user', 'code'=>203]);
         $test = count($user->currenttest)<1 ? !count($user->completedtests) || $user->diagnostic ? 
             $user->tests()->create(['test'=>$user->name."'s Diagnostic test",'description'=> $user->name."'s diagnostic test ".date('Y-m-d',strtotime('0 day')), 'start_available_time'=> date('Y-m-d', strtotime('-1 day')), 'end_available_time'=>date('Y-m-d', strtotime('+1 year')),'diagnostic'=>TRUE, 'level_id'=>2]):
