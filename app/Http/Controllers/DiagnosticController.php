@@ -37,7 +37,7 @@ class DiagnosticController extends Controller
        $user = Auth::user();
        $enrolled = $user->validEnrolment($courses); //k-6 courses enrolled in
 
-//        if (!count($enrolled)) return response()->json(['message'=>'Not properly enrolled or first time user', 'code'=>203]);
+        if (!count($enrolled)) return response()->json(['message'=>'Not properly enrolled or first time user', 'code'=>203]);
         $test = count($user->currenttest)<1 ? !count($user->completedtests) || $user->diagnostic ? 
             $user->tests()->create(['test'=>$user->name."'s Diagnostic test",'description'=> $user->name."'s diagnostic test ".date('Y-m-d',strtotime('0 day')), 'start_available_time'=> date('Y-m-d', strtotime('-1 day')), 'end_available_time'=>date('Y-m-d', strtotime('+1 year')),'diagnostic'=>TRUE, 'level_id'=>2]):
             $user->tests()->create(['test'=>$user->name."'s ".date("m/d/Y")." test",'description'=> $user->name."'s ".date("m/d/Y")." Test", 'start_available_time'=> date('Y-m-d', strtotime('-1 day')), 'end_available_time'=>date('Y-m-d', strtotime('+1 year')),'diagnostic'=>FALSE]):
