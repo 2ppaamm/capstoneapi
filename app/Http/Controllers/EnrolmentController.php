@@ -41,15 +41,16 @@ class EnrolmentController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function store(CreateRegisterRequest $request)
-    {           
+    { 
         $user = Auth::user();
         $date = new DateTime('now');
         $role_to_enrol = Role::where('role','LIKE',$request->role)->first();
         $class_to_enrol = \App\House::findorfail($request->house_id);
-        if (!$request->user_id) {
+        if (!$request->user) {
             $enrol_user = $user;
         } else {                            // not enrolling yourself
-            $enrol_user = User::find($request->user_id);
+            $enrol_user = User::where('name','LIKE', $request->user)->first();
+//            $enrol_user = User::find($request->user_id);
             $most_powerful = $user->enrolledClasses()->whereHouseId($request->house_id)->with('roles')->min('role_id');
             if (!$most_powerful || $most_powerful > $role_to_enrol->id || !$user->is_admin) {        // administrator 
                 return response()->json(['message'=>'No authorization to enrol', 'code'=>203], 203);
@@ -57,9 +58,9 @@ class EnrolmentController extends Controller
         }
         $mastercode = null;
         $mastercodemsg = null;
-        if ($request->place_allotted){
+        if ($request->places_alloted>0){
             $mastercode = rand ( 10000000, 99999999);
-            $mastercodemsg = 'Your mastercode is<b>'.$mastercode.'</b>, which can be used for enrollment of '.$request->places_alloted.'student(s).<br><br>Once your student logs in for the first time, the enrolment starts.<br><br> Please instruct your student to proceed to quiz.all-gifted.com to enrol for the course and begin a diagnostic test.<br><br> Should you have any queries, please do not hesitate to contact us at info.allgifted@gmail.com<br><br>Thank you. <br><br>';
+            $mastercodemsg = 'Your mastercode is '.$mastercode.', which can be used for enrollment of '.$request->places_alloted.' student(s).  Once your student logs in for the first time, the enrolment starts. Please instruct your student to proceed to quiz.all-gifted.com to enrol for the course and begin a diagnostic test. Should you have any queries, please do not hesitate to contact us at info.allgifted@gmail.com. Thank you.';
         }
 
         $register = Enrolment::firstOrNew(['user_id'=>$enrol_user->id, 'house_id'=>$request->house_id, 'role_id'=>$role_to_enrol->id]);
@@ -71,9 +72,8 @@ class EnrolmentController extends Controller
                     ->to($user->email)->cc('info.allgifted@gmail.com')
                     ->subject('Thank you for registration')
                     ->setBody($note, 'text/html');
-        });            
-
-        return response()->json(['message' => 'Registration successful. Within an hour, you should receive an email at '.$user->email.' with details of how to enrol and start the program.', 'enrolment'=> $register,
+        });
+        return response()->json(['message' => 'Registration successful. Within an hour, you should receive an email at '.$user->email.'. '.$mastercodemsg, 'enrolment'=> $register,
             'places_alloted'=>$request->places_alloted, 'code'=>201]);
     }
     
