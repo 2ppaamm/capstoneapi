@@ -45,9 +45,9 @@ class TestTable extends Migration
 
         Schema::create('house_test', function (Blueprint $table) {
             $table->integer('house_id')->unsigned();
-            $table->foreign('house_id')->references('id')->on('tests');
+            $table->foreign('house_id')->references('id')->on('houses');
             $table->integer('test_id')->unsigned()->default(1);
-            $table->foreign('test_id')->references('id')->on('users');
+            $table->foreign('test_id')->references('id')->on('tests');
             $table->date('start_date');
             $table->date('end_date');
             $table->decimal('result', 3,2);

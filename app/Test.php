@@ -10,12 +10,16 @@ class Test extends Model
 {
     use RecordLog;
     
-    protected $hidden = ['user_id', 'created_at','updated_at'];
+    protected $hidden = ['created_at','updated_at'];
     protected $fillable = ['test', 'description', 'diagnostic', 'number_of_tries_allowed','start_available_time', 'end_available_time','due_time','result','image', 'status_id'];
 
     //relationship
     public function questions(){
         return $this->belongsToMany(Question::class, 'question_user')->withPivot('correct','question_answered','answered_date', 'attempts', 'user_id')->withTimestamps();
+    }
+
+    public function user() {
+        return $this->belongsTo(User::class);
     }
 
     public function skills() {

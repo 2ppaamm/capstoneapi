@@ -7,10 +7,13 @@ use Illuminate\Http\Request;
 use App\Http\Requests;
 use App\Http\Controllers\Controller;
 use App\Test;
+use Auth;
+
 
 class TestController extends Controller
 {
     public function __construct(){
+//        $user = Auth::user();        
 //        $this->middleware('oauth', ['except'=>['index']]);
     }
 
@@ -21,6 +24,11 @@ class TestController extends Controller
      */
     public function index()
     {
+      $logon_user = Auth::user();
+        if (!$logon_user->is_admin) {
+            return response()->json(['message' => 'You have no access rights to the tests','code'=>401], 401);
+        }
+
         $tests = Test::all();
         return response()->json(['data'=>$tests], 200);
     }
@@ -42,9 +50,14 @@ class TestController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show(Test $test)
     {
-        //
+        $test_owner = $test->user;
+        $logon_user = Auth::user();
+        if ($logon_user->id != $test_owner->id && !$logon_user->is_admin) {
+            return response()->json(['message' => 'You have no access rights to view the test','code'=>401], 401);
+        }
+        return response()->json(['test'=>$test, 'questions'=>$test->questions, 'code'=>201], 201);
     }
 
     /**
@@ -54,12 +67,8 @@ class TestController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, Test $test)
     {
-        $test = Test::find($id);
-        if(!$test) {
-            return response()->json(['message'=>'This test does not exist', 'code'=>404]);
-        }
 
         $field = $request->get('field');
         $value = $request->get('value');
