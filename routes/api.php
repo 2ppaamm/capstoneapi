@@ -39,6 +39,7 @@ Route::resource('users.tests', 'UserTestController', ['except' => ['edit', 'crea
 Route::resource('tracks', 'TrackController', ['except' =>['edit']]);
 Route::resource('tests', 'TestController', ['except' =>['create', 'edit']]);
 Route::resource('types', 'TypeController');
+Route::post('skills/{skills}/copy', 'SkillController@copy');
 Route::get('skills/{skills}/passed','SkillController@usersPassed');
 Route::post('skills/search', 'SkillController@search');
 Route::get('skills/{skill}/tracks', 'TrackSkillController@list_tracks');

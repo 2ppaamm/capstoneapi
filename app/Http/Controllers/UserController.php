@@ -83,7 +83,7 @@ class UserController extends Controller
 
 
     /**
-     * Store a newly created resource in storage.
+     * Mark so that the next test for the user will be the diagnostic test.
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
@@ -98,6 +98,24 @@ class UserController extends Controller
         $user->diagnostic = TRUE;
         $user->save();
         return response()->json(['message' => 'Set Diagnostic for '.$user->name.' is done.', 'data' => $user, 'code' => 200]);
+    }
+
+    /**
+     * Make an existing user an administrator.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function administrator($id)
+    {
+        $logon_user = Auth::user();
+        if ($logon_user->id && !$logon_user->is_admin) {
+            return response()->json(['message' => 'You have no access rights to set user to be an admin','code'=>401], 401);
+        }
+        $user = User::findorfail($id);
+        $user->is_admin = $user->is_admin ? TRUE:FALSE;
+        $user->save();
+        return response()->json(['message' => 'Set Administrator for '.$user->name.' is done.', 'data' => $user, 'code' => 200]);
     }
 
     /**
