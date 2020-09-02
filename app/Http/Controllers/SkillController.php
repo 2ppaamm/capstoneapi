@@ -85,20 +85,21 @@ class SkillController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function copy(Skill $skill)
+    public function copy($id)
     {
         $user = Auth::user();
         if (!$user->is_admin){
             return response()->json(['message'=>'Only administrators can create a new skills', 'code'=>403],403);
         }
+        $skill = Skill::findOrFail(3);
         $newSkill = $skill->replicate();
         $newSkill->user_id = $user->id;
+        $newSkill->save();
         foreach ($skill->links as $key=>$link) {
             $new_link = \App\SkillLink::create(['skill_id'=>$new_skill->id, 'user_id'=>$user->id, 'status_id'=>4, 'link'=>$skill->link]);
         }
-return $skill->tracks()->first();//()->lists('id');
-//        $new_skill->tracks()->sync(($skill->tracks()->list('id')), FALSE);
-        return response()->json(['message' => 'Skill correctly added.', 'skill'=>$new_skill,'links'=>$new_skill->links,'code'=>201]);
+        $newSkill->tracks()->sync($skill->tracks->pluck('id'), FALSE);
+        return response()->json(['message' => 'Skill correctly added.', 'skill'=>$newSkill,'links'=>$newSkill->links, 'tracks'=>$newSkill->tracks, 'code'=>201]);
 
     }
 
