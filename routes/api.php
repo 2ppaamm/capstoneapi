@@ -7,6 +7,16 @@ use Illuminate\Http\Request;
 | 
 */
 
+
+/*
+ * Quiz
+ */
+//Route::get('quizzess', 'QuizController@index');
+//Route::post('quizzes', 'QuizController@store');
+//Route::put('quizzes/{quiz}', 'QuizController@store');
+
+Route::resource('quizzes', 'QuizController');
+
 Route::resource('/', 'DashboardController');
 
 Route::post('/qa', 'CheckAnswerController@index');
@@ -58,3 +68,6 @@ Route::get('logs', 'LogController@index');
 Route::post('/test/protected', 'DiagnosticController@index');
 Route::post('test/mastercode', 'DiagnosticController@store');
 Route::post('/test/answers', 'DiagnosticController@answer');
+
+
+

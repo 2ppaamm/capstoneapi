@@ -21,6 +21,10 @@ class QuizTable extends Migration
             $table->timestamps();
         });
 
+
+
+
+
         Schema::create('question_quiz', function (Blueprint $table) {
             $table->integer('quiz_id')->unsigned();
             $table->foreign('quiz_id')->references('id')->on('quizzes');

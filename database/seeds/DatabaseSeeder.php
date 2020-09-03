@@ -24,8 +24,9 @@ class DatabaseSeeder extends Seeder
           //  $this->call(FieldSeeder::class);
             //$this->call(UnitSeeder::class);
   //          $this->call(ResultTypeSeeder::class);
-            $this->call(FrameworkSeeder::class);
+//            $this->call(FrameworkSeeder::class);
 //            $this->call(HouseSkillSeeder::class);
+            $this->call(QuizSeeder::class);
 
         Model::reguard();
     }
