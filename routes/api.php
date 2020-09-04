@@ -11,11 +11,10 @@ use Illuminate\Http\Request;
 /*
  * Quiz
  */
-//Route::get('quizzess', 'QuizController@index');
-//Route::post('quizzes', 'QuizController@store');
-//Route::put('quizzes/{quiz}', 'QuizController@store');
 
 Route::resource('quizzes', 'QuizController');
+Route::post('/quizzes/copy/{quiz}', 'QuizController@copy');
+Route::get('/quizzes/create', 'QuizController@create');
 
 Route::resource('/', 'DashboardController');
 

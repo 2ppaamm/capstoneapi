@@ -44,12 +44,15 @@ class Quiz extends Model
 //    2020-08-31 chen bing add
     public function questions()
     {
-        return $this->belongsToMany(QuestionQuiz::class);
+//        return $this->belongsToMany(QuestionQuiz::class);
+        return $this->hasMany(QuestionQuiz::class);
+
     }
 
     public function skills()
     {
-        return $this->belongsToMany(QuizSkill::class);
+//        return $this->belongsToMany(QuizSkill::class);
+        return $this->hasMany(QuizSkill::class);
     }
 
     public function quizzer()
@@ -64,7 +67,9 @@ class Quiz extends Model
 
     public function houses()
     {
-        return $this->belongsToMany(HouseQuiz::class, 'house_quiz')->withTimestamps();
+//        return $this->belongsToMany(HouseQuiz::class, 'house_quiz')->withTimestamps();
+//        return $this->hasMany(HouseQuiz::class, 'house_quiz')->withTimestamps();
+        return $this->hasMany(HouseQuiz::class);
     }
 
     public function user_questions()
