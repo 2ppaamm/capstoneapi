@@ -79,6 +79,29 @@ class SkillController extends Controller
         return response()->json(['message' => 'Skill correctly added.', 'skill'=>$skill,'links'=>$skill->links,'code'=>201]);
 
     }
+    /**
+     * Copy an existing resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function copy($id)
+    {
+        $user = Auth::user();
+        if (!$user->is_admin){
+            return response()->json(['message'=>'Only administrators can create a new skills', 'code'=>403],403);
+        }
+        $skill = Skill::findOrFail(3);
+        $newSkill = $skill->replicate();
+        $newSkill->user_id = $user->id;
+        $newSkill->save();
+        foreach ($skill->links as $key=>$link) {
+            $new_link = \App\SkillLink::create(['skill_id'=>$new_skill->id, 'user_id'=>$user->id, 'status_id'=>4, 'link'=>$skill->link]);
+        }
+        $newSkill->tracks()->sync($skill->tracks->pluck('id'), FALSE);
+        return response()->json(['message' => 'Skill correctly added.', 'skill'=>$newSkill,'links'=>$newSkill->links, 'tracks'=>$newSkill->tracks, 'code'=>201]);
+
+    }
 
     /**
      * Update the specified resource in storage.
