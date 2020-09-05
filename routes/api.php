@@ -13,7 +13,7 @@ use Illuminate\Http\Request;
  */
 
 Route::resource('quizzes', 'QuizController');
-Route::post('/quizzes/copy/{quiz}', 'QuizController@copy');
+Route::post('/quizzes/{quiz}/copy', 'QuizController@copy');
 Route::get('/quizzes/create', 'QuizController@create');
 
 Route::resource('/', 'DashboardController');
