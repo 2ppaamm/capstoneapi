@@ -91,7 +91,7 @@ class SkillController extends Controller
         if (!$user->is_admin){
             return response()->json(['message'=>'Only administrators can create a new skills', 'code'=>403],403);
         }
-        $skill = Skill::findOrFail(3);
+        $skill = Skill::findOrFail($id);
         $newSkill = $skill->replicate();
         $newSkill->user_id = $user->id;
         $newSkill->save();
