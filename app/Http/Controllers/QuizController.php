@@ -54,7 +54,7 @@ class QuizController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['message' => 'create quiz is failed', 'data' => $validator->errors(), 'code' => 201]);
+            return response()->json(['message' => 'Create quiz failed', 'data' => $validator->errors(), 'code' => 201]);
         }
 
         $quiz = Quiz::create($request->except(['houses', 'skills']));
