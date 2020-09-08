@@ -130,6 +130,18 @@ class QuizController extends Controller
      * @param  Quiz $quiz
      * @return \Illuminate\Http\Response
      */
+    public function show(Quiz $quiz)
+    {
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request $request
+     * @param  Quiz $quiz
+     * @return \Illuminate\Http\Response
+     */
+        return $quiz;
+    }
+    
     public function update(Request $request, Quiz $quiz)
     {
         $logon_user = Auth::user();
