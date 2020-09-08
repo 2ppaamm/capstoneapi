@@ -4,6 +4,7 @@ namespace App;
 
 use App\Role;
 use App\User;
+use App\Quiz;
 use DB;
 use Auth;
 use Illuminate\Auth\Authenticatable;
@@ -211,6 +212,7 @@ class User extends Model implements AuthenticatableContract,
         return $this->tests()->whereTestCompleted(1);
     }
 
+    // questions
     public function myQuestions(){
         return $this->belongsToMany(Question::class)->withPivot('question_answered', 'answered_date','correct','attempts','test_id')->withTimestamps();
     }
@@ -234,9 +236,25 @@ class User extends Model implements AuthenticatableContract,
     public function noOfAttempts($question_id){
         return $this->myQuestions()->where('question_id',$question_id)->select('attempts')->first()->attempts; 
     }
+
+    //quizzes
+
     public function quizzes(){
-        return $this->hasMany(Quiz::class);
+        return $this->belongsToMany(Quiz::class)->withPivot('quiz_completed','completed_date', 'result', 'attempts')->withTimestamps();
     }
+
+    public function incompletequizzes(){
+        return $this->quizzes()->whereQuizCompleted(0)->where('start_available_time', '<=', new DateTime('today'))->where('end_available_time','>=', new DateTime('today'))->orderBy('created_at','desc');
+    }
+
+    public function currentquiz(){
+        return $this->incompletequizzes()->take(1);
+    }
+
+    public function completedquizzes(){
+        return $this->quizzes()->whereQuizCompleted(1);
+    }
+
 
     //query scopes
 

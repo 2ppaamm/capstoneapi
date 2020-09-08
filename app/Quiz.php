@@ -62,7 +62,7 @@ class Quiz extends Model
 
     public function quizzees()
     {
-        return $this->belongsToMany(User::class, 'quiz_user')->withPivot('completed', 'result', 'attempts', 'last_test_date')->withTimestamps();
+        return $this->belongsToMany(User::class, 'quiz_user')->withPivot('quiz_completed','completed_date', 'result', 'attempts')->withTimestamps();
     }
 
     public function houses()
@@ -86,4 +86,21 @@ class Quiz extends Model
     {
         return $this->user_questions()->where('attempts', '>', '0')->whereUser_id($user_id);
     }
+
+    public function fieldQuestions($user){
+        $questions = collect([]);
+
+        // find the questions to send to frontend, send 5 at a time.
+        $questions = \App\Question::whereIn('skill_id', House::findorFail($user->enrolledClasses()->first()->house_id)->skills()->pluck('id'))->get();
+
+        /* 1. if no question in question_quiz_user for this quiz, fill user_skill and user_track
+         * 2. Send five unattempted questions at a time to front end
+         * 3. When no more unattempted questions in quiz, mark quiz as complete
+         * 4. When quiz is completed, calculate scores in %, show which skills passed and which failed.
+         * 5. If quiz is diagnostic, find all questions related to house enrolled in. If not diagnostic, 
+         *    find questions from enrolled houses->unexpired tracks.
+         */       
+        return response()->json(['message' => 'Questions fetched', 'quiz'=>$this->id, 'questions'=>$questions, 'code'=>201]);
+    }
+
 }

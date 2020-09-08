@@ -58,7 +58,6 @@ class QuizController extends Controller
         }
 
         $quiz = Quiz::create($request->except(['houses', 'skills']));
-
         // add houses
         if ($request->exists('houses')) {
             $houses = array_wrap($request->get('houses'));
@@ -141,7 +140,7 @@ class QuizController extends Controller
      */
         return $quiz;
     }
-    
+
     public function update(Request $request, Quiz $quiz)
     {
         $logon_user = Auth::user();
