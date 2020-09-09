@@ -94,23 +94,25 @@ class Quiz extends Model
         $questions = \App\Question::whereIn('skill_id', House::findorFail($user->enrolledClasses()->first()->house_id)->skills()->pluck('id'))->get();
 
         /* Finding the 5 questions to return:
-         * 1. If no question in !question_quiz_user->attempts for this quiz, 
-         *    a. If $quiz->diagnostic, find $questions with skill_id in tracks in $user->enrolledClasses 
+         * 1. If !$question_quiz_user->attempts>0, $questions = !$question_quiz_user->attempts 
+         * 2. If no question in !question_quiz_user->attempts for this quiz,
+         *    a. if $quiz_user->completed, return error, 500.
+         *    b. If $quiz->diagnostic, find $questions with skill_id in tracks in $user->enrolledClasses 
          *       with $question->source = "diagnostic". 
-         *    b. If quiz is not diagnostic, and $questions<10, where $question->source <> "diagnostic" and in
+         *    c. If quiz is not diagnostic, and $questions<10, where $question->source != "diagnostic" and in
          *       this priority:
-         *      i. Questions either not present in $question_quiz_user or !$question_quiz_user->correct that 
-         *         have skill_id belonging to a track with valid date: today between 
+         *      i. Questions either not present in $question_quiz_user or !$question_quiz_user->correct
+         *         (previous quizzes) that have skill_id belonging to a track with valid date: today between 
          *         $house_track->start_date and end_date
          *      ii. if count($questions)<10 after (a), then find questions with skill_id in track where 
-         *          $housetrack->end_date < today and !$question_quiz_user->correct
+         *          $housetrack->end_date < today, $user_skill->skill_passed & !$question_quiz_user->correct
          *      iii. if count($questions)<10 after (b), then find any questions with skill_id in track 
-         *          where $housetrack->end_date < today
-         *    c. When count($questions)>=10:
-                i. fill user_skill, user_track and question_quiz_user with the related skill, track, quiz 
-                   and question information.
-         *  2. $questions = !$question_quiz_user->attempts
-         *  3. if count($questions)>5 return $questions->take(5) else return $questions to front end
+         *          where $housetrack->end_date < today and in skill where !$user_skill->skill_passed
+         *    d. When count($questions)>=10:
+         *       i. $questions->take(10)
+         *       ii. fill user_skill, user_track and question_quiz_user with the related skill, track, quiz 
+         *           and question information.
+         *  2. if count($questions)>5 return $questions->take(5) else return $questions to front end
          * 
          */       
         return response()->json(['message' => 'Questions fetched', 'quiz'=>$this->id, 'questions'=>$questions, 'code'=>201]);
