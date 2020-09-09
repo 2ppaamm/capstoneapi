@@ -93,24 +93,23 @@ class Quiz extends Model
         // find the questions to send to frontend, send 5 at a time.
         $questions = \App\Question::whereIn('skill_id', House::findorFail($user->enrolledClasses()->first()->house_id)->skills()->pluck('id'))->get();
 
-        /* Finding the right questions:
-         * 1. If there are existing question in question_quiz_user for this quiz, return 5 questions.
-         * 2. if no question in question_quiz_user for this quiz, check if quiz is diagnostic
-         * 3. If quiz is diagnostic, find $questions with skill_id in tracks in $user->enrolledClasses 
-         *    with $question->source = "diagnostic". 
-         * 4. If quiz is not diagnostic, find 10 questions, where $question->source <> "diagnostic" and in 
-         *    this priority:
-         *    a. Questions either not present in $question_quiz_user or !$question_quiz_user->correct that 
-         *       have skill_id belonging to a track with valid date: today between $house_track->start_date 
-         *       and end_date
-         *    b. if count($questions)<10 after (a), then find questions with skill_id in track where 
-         *       $housetrack->end_date < today and !$question_quiz_user->correct
-         *    c. if count($questions)<10 after (b), then find any questions with skill_id in track where   
-         *       $housetrack->end_date < today
-         * 5. When count($questions)>=10:
-              a. fill user_skill, user_track and question_quiz_user with the related skill, track, quiz and  
-                 question information.
-         *    b. Return 5 questions from !$question_quiz_user->atempts to front end
+        /* Finding the 5 questions to return:
+         * 1. If no question in !question_quiz_user->attempts for this quiz, 
+         *    a. If $quiz->diagnostic, find $questions with skill_id in tracks in $user->enrolledClasses 
+         *       with $question->source = "diagnostic". 
+         *    b. If quiz is not diagnostic, and $questions<10, where $question->source <> "diagnostic" and in
+         *       this priority:
+         *      i. Questions either not present in $question_quiz_user or !$question_quiz_user->correct that 
+         *         have skill_id belonging to a track with valid date: today between 
+         *         $house_track->start_date and end_date
+         *      ii. if count($questions)<10 after (a), then find questions with skill_id in track where 
+         *          $housetrack->end_date < today and !$question_quiz_user->correct
+         *      iii. if count($questions)<10 after (b), then find any questions with skill_id in track 
+         *          where $housetrack->end_date < today
+         *    c. When count($questions)>=10:
+                i. fill user_skill, user_track and question_quiz_user with the related skill, track, quiz 
+                   and question information.
+         *  2. Return 5 questions !$question_quiz_user->attempts to front end
          * 
          */       
         return response()->json(['message' => 'Questions fetched', 'quiz'=>$this->id, 'questions'=>$questions, 'code'=>201]);
