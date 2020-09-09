@@ -109,7 +109,8 @@ class Quiz extends Model
          *    c. When count($questions)>=10:
                 i. fill user_skill, user_track and question_quiz_user with the related skill, track, quiz 
                    and question information.
-         *  2. Return 5 questions !$question_quiz_user->attempts to front end
+         *  2. $questions = !$question_quiz_user->attempts
+         *  3. if count($questions)>5 return $questions->take(5) else return $questions to front end
          * 
          */       
         return response()->json(['message' => 'Questions fetched', 'quiz'=>$this->id, 'questions'=>$questions, 'code'=>201]);
