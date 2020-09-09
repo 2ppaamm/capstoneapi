@@ -93,12 +93,25 @@ class Quiz extends Model
         // find the questions to send to frontend, send 5 at a time.
         $questions = \App\Question::whereIn('skill_id', House::findorFail($user->enrolledClasses()->first()->house_id)->skills()->pluck('id'))->get();
 
-        /* 1. if no question in question_quiz_user for this quiz, fill user_skill and user_track
-         * 2. Send five unattempted questions at a time to front end
-         * 3. When no more unattempted questions in quiz, mark quiz as complete
-         * 4. When quiz is completed, calculate scores in %, show which skills passed and which failed.
-         * 5. If quiz is diagnostic, find all questions related to house enrolled in. If not diagnostic, 
-         *    find questions from enrolled houses->unexpired tracks.
+        /* Finding the right questions:
+         * 1. If there are existing question in question_quiz_user for this quiz, return 5 questions.
+         * 2. if no question in question_quiz_user for this quiz, check if quiz is diagnostic
+         * 3. If quiz is diagnostic, find $questions with skill_id in tracks in $user->enrolledClasses 
+         *    with $question->source = "diagnostic". 
+         * 4. If quiz is not diagnostic, find 10 questions, where $question->source <> "diagnostic" and in 
+         *    this priority:
+         *    a. Questions either not present in $question_quiz_user or !$question_quiz_user->correct that 
+         *       have skill_id belonging to a track with valid date: today between $house_track->start_date 
+         *       and end_date
+         *    b. if count($questions)<10 after (a), then find questions with skill_id in track where 
+         *       $housetrack->end_date < today and !$question_quiz_user->correct
+         *    c. if count($questions)<10 after (b), then find any questions with skill_id in track where   
+         *       $housetrack->end_date < today
+         * 5. When count($questions)>=10:
+              a. fill user_skill, user_track and question_quiz_user with the related skill, track, quiz and  
+                 question information.
+         *    b. Return 5 questions from !$question_quiz_user->atempts to front end
+         * 
          */       
         return response()->json(['message' => 'Questions fetched', 'quiz'=>$this->id, 'questions'=>$questions, 'code'=>201]);
     }
