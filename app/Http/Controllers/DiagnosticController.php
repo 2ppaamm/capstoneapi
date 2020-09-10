@@ -42,11 +42,13 @@ class DiagnosticController extends Controller
 
         if (!count($enrolled)) return response()->json(['message'=>'Not properly enrolled or first time user', 'code'=>203]);
 
-        $quiz = $allreadyenrolled ? count($user->currentquiz)<1 ? !count($user->completedquizzes) || $user->diagnostic ? 
-            $user->quizzes()->create(['quiz'=>$user->name."'s AllReady Diagnostic quiz",'description'=> $user->name."'s diagnostic quiz ".date('Y-m-d',strtotime('0 day')), 'start_available_time'=> date('Y-m-d', strtotime('-1 day')), 'end_available_time'=>date('Y-m-d', strtotime('+1 month')),'diagnostic'=>TRUE]):
-            $user->quizzes()->create(['quiz'=>$user->name."'s ".date("m/d/Y")." AllReady quiz",'description'=> $user->name."'s ".date("m/d/Y")." Quiz", 'start_available_time'=> date('Y-m-d', strtotime('-1 day')), 'end_available_time'=>date('Y-m-d', strtotime('+1 month')),'diagnostic'=>FALSE]):
-            $user->currentquiz[0] : null;
-        return $quiz->fieldQuestions($user);                // output quiz questions
+        if ($allreadyenrolled) {
+            $quiz = count($user->currentquiz)<1 ? !count($user->completedquizzes) || $user->diagnostic ? 
+                $user->quizzes()->create(['quiz'=>$user->name."'s AllReady Diagnostic quiz",'description'=> $user->name."'s diagnostic quiz ".date('Y-m-d',strtotime('0 day')), 'start_available_time'=> date('Y-m-d', strtotime('-1 day')), 'end_available_time'=>date('Y-m-d', strtotime('+1 month')),'diagnostic'=>TRUE]):
+                $user->quizzes()->create(['quiz'=>$user->name."'s ".date("m/d/Y")." AllReady quiz",'description'=> $user->name."'s ".date("m/d/Y")." Quiz", 'start_available_time'=> date('Y-m-d', strtotime('-1 day')), 'end_available_time'=>date('Y-m-d', strtotime('+1 month')),'diagnostic'=>FALSE]) :
+                $user->currentquiz[0];
+            return $quiz->fieldQuestions($user);                // output quiz questions
+        }
 
 
         $test = count($user->currenttest)<1 ? !count($user->completedtests) || $user->diagnostic ? 
