@@ -88,10 +88,60 @@ class Quiz extends Model
     }
 
     public function fieldQuestions($user){
-        $questions = collect([]);
+        $fieldQuestions = [];
 
         // find the questions to send to frontend, send 5 at a time.
-        $questions = \App\Question::whereIn('skill_id', House::findorFail($user->enrolledClasses()->first()->house_id)->skills()->pluck('id'))->get();
+//        $questions = \App\Question::whereIn('skill_id', House::findorFail($user->enrolledClasses()->first()->house_id)->skills()->pluck('id'))->get();
+
+        $attemptQuestions = $this->unansweredQuestions($user->id)->get();
+
+        $attemptQuestionNumber = count($attemptQuestions);
+
+        if (!$attemptQuestionNumber) {
+
+            if ($user->completedquizzes()->count()) {
+                return response()->json(['message' => 'quiz completed error', 'code'=>500], 500);
+            }
+
+            if ($this->diagnostic) {
+                $houseIds = $user->enrolledClasses()->pluck('house_id');
+                if (!$houseIds) {
+                    return $fieldQuestions;
+                }
+
+                foreach ($houseIds as $houseId) {
+                    $trackIds = House_Track::where('house_id', $houseId)->pluck('track_id');
+
+                    if (!$trackIds) {
+                        continue;
+                    }
+
+                    foreach ($trackIds as $trackId) {
+                        $skillIds = Track::find($trackId)->skills()->pluck('skill_id');
+
+                        if (!$skillIds) {
+                            continue;
+                        }
+
+                        $questions = Question::whereIn('skill_id', $skillIds)->where('source', 'diagnostic')->take(5)->get();
+
+                        $fieldQuestions = array_merge($fieldQuestions, $questions->toArray());
+                    }
+                }
+            } else {
+                $questions = $user->unDiagnosticQuestions()->get();
+                $questionNumber = $questions->count();
+
+                if ($questionNumber < 10) {
+
+                } else {
+                    $fieldQuestions = array_merge($fieldQuestions, $questions->take(5)->toArray());
+                }
+            }
+        }
+
+        return $fieldQuestions;
+
 
         /* Finding the 5 questions to return:
          * 1. If !$question_quiz_user->attempts>0, $questions = !$question_quiz_user->attempts 
@@ -115,7 +165,7 @@ class Quiz extends Model
          *  2. if count($questions)>5 return $questions->take(5) else return $questions to front end
          * 
          */       
-        return response()->json(['message' => 'Questions fetched', 'quiz'=>$this->id, 'questions'=>$questions, 'code'=>201]);
+
     }
 
 }
