@@ -57,6 +57,10 @@ class User extends Model implements AuthenticatableContract,
         return $this->hasMany(Question::class);
     }
 
+    public function unDiagnosticQuestions() {
+        return $this->questions()->where('source', '<>', 'diagnostic')->orWhereNull('source');
+    }
+
     public function difficulties() {
         return $this->hasMany(Difficulty::class);
     }
