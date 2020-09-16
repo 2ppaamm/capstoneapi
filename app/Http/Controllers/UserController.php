@@ -167,7 +167,7 @@ class UserController extends Controller
             $user->push();
             return response()->json(['message' => 'User successfully updated.', 'user' => $user, 'code' => 201], 201);
         } catch (\Throwable $th) {
-            return response()->json(['message' => 'server has error.', 'user' => $th->getMessage(), 'code' => 201], 400);
+            return response()->json(['message' => 'server has error.', 'user' => $th->getMessage(), 'code' => 400], 400);
         }
     }
 

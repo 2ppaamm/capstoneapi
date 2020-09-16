@@ -43,9 +43,9 @@ class HouseTrackController extends Controller
      */
     public function store(Request $request, House $house)
     {   
-        foreach ($request->all() as $track_id){
+        foreach ($request->track as $track_id=>$linktrack){
             if ($track=Track::find($track_id)){
-                $track->houses()->sync($house->id, false);
+                $track->houses()->sync([$house->id=>$linktrack], false);
             } else {
                 response()->json(['message'=>'Error in track chosen'], 401);
             } 
@@ -62,6 +62,21 @@ class HouseTrackController extends Controller
     public function show(House $house, Track $track)
     {
         return $house->tracks()->with('skills.questions')->whereTrackId($track->id)->get();   
+    }
+
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function update(Request $request, House $house, Track $track)
+    {
+        $user = Auth::user();
+        $house->tracks()->sync([$track->id=>$request->all()], false);
+        return response()->json(['message'=>$house->house.' tracks updated successful', 'class'=>$house, 'code'=>201], 201);
     }
 
 

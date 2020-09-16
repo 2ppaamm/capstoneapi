@@ -43,7 +43,7 @@ Route::resource('courses.users', 'CourseUserController', ['except' => ['edit', '
 Route::resource('houses.users', 'HouseUserController', ['except' => ['edit', 'create']]);
 Route::resource('courses.tracks', 'CourseTrackController', ['except' => ['edit', 'create']]);
 Route::delete('houses/{house}/tracks','HouseTrackController@deleteAll');
-Route::resource('houses.tracks', 'HouseTrackController', ['except' => ['edit', 'create']]);
+Route::resource('houses.tracks', 'HouseTrackController', ['except' => ['create']]);
 Route::resource('users.tests', 'UserTestController', ['except' => ['edit', 'create']]);
 Route::resource('tracks', 'TrackController', ['except' =>['edit']]);
 Route::resource('tests', 'TestController', ['except' =>['create', 'edit']]);
