@@ -34,6 +34,9 @@ class Enrolment extends Model
         return $this->belongsTo(User::class, 'purchaser_id');
     }
 
+    public function quizzes(){
+        return $this->belongsTo(HouseQuiz::class);
+    }
 //    public function mastercodes(){
 //        return $this->hasOne(Mastercode::class);
  //   }

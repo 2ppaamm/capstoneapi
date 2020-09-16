@@ -5,6 +5,7 @@ namespace App;
 use Illuminate\Database\Eloquent\Model;
 use DB;
 use Auth;
+use DateTime;
 
 class House extends Model
 {
@@ -33,15 +34,6 @@ class House extends Model
 
     public function tracks(){
     	return $this->belongsToMany(Track::class)->withPivot('track_order','start_date', 'end_date')->orderBy('track_order');
-    }
-
-    public function skills() {
-        return $this->tracks()->with('skills');
-//      $skills = Skill::whereIn('id', \App\Skill_Track::whereIn('track_id',$this->tracks()->pluck('id'))->pluck('skill_id'));
-    }
-
-    public function skills_passed() {
-//        return $this->skills()->where()
     }
 
     public function maxTrack($house){
@@ -98,7 +90,15 @@ class House extends Model
     }
 
     public function quizzes(){
-        return $this->belongsToMany(Quiz::class)->Timestamps();
+        return $this->belongsToMany(Quiz::class)->withPivot('start_date','end_date','result','attempts','which_attempt')->withTimestamps();
+    }
+
+    public function current_track(){
+        return $this->belongsToMany(Track::class)->withPivot('track_order','start_date', 'end_date')->wherePivot('start_date','<',new DateTime('today'))->wherePivot('end_date','>',new DateTime('today'));
+    }
+
+    public function taught_tracks(){
+        return $this->tracks()->wherePivot('start_date','<',new DateTime('today'))->wherePivot('end_date','<',new DateTime('today'));
     }
 
     // roles and permissions
@@ -110,7 +110,7 @@ class House extends Model
         return $this->belongsToMany(User::class, 'house_role_user')->withPivot('role_id')->withTimestamps();
     }
 
-//    public function progress(){
-//        return $this->tracks;
-//    }
+    public function scopeSkills($query){
+        return Skill::whereIn('id',Skill_Track::whereIn('track_id',$this->tracks()->pluck('id'))->pluck('skill_id'))->get();
+    }
 }

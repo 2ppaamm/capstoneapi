@@ -21,9 +21,18 @@ class QuizTable extends Migration
             $table->timestamps();
         });
 
-
-
-
+        Schema::create('quiz_user', function (Blueprint $table) {
+            $table->integer('quiz_id')->unsigned();
+            $table->foreign('quiz_id')->references('id')->on('quizzes');
+            $table->integer('user_id')->unsigned()->default(1);
+            $table->foreign('user_id')->references('id')->on('users');
+            $table->boolean('quiz_completed')->default(false);
+            $table->date('completed_date')->nullable();
+            $table->decimal('result', 8,2)->nullable();
+            $table->integer('attempts')->default(0);
+            $table->primary(['quiz_id','user_id']);
+            $table->timestamps();
+        });
 
         Schema::create('question_quiz', function (Blueprint $table) {
             $table->integer('quiz_id')->unsigned();
@@ -59,7 +68,8 @@ class QuizTable extends Migration
     public function down()
     {
         Schema::drop('house_quiz');
-        Schema::drop('question_quiz');        
+        Schema::drop('question_quiz');
+        Schema::drop('quiz_user');        
         Schema::drop('quizzes');
     }
 }

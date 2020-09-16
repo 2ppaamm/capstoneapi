@@ -41,7 +41,7 @@ class Question extends Model
     }
 
     public function quizzes(){
-        return $this->belongsToMany(Quiz::class)->withTimestamps();
+        return $this->belongsToMany(Quiz::class)->withPivot('date_answered','correct')->withTimestamps();
     }
 
     public function users(){
@@ -68,6 +68,17 @@ class Question extends Model
             } else $correctness = $this->correct_answer != $answers ? FALSE:TRUE;
         return $correctness;
     }
+
+    public function answered($user, $correctness, $test, $quiz){
+        $record = ['question_answered' => TRUE,
+            'answered_date' => new DateTime('now'),
+            'correct' =>$correctness,
+            'test_id' => $test ? $test->id : 1,
+            'quiz_id' => $quiz ? $quiz->id : 1,
+            'attempts' => $this->attempts($user->id) + 1];
+        return $this->users()->sync([$user->id=>$record], false);
+    }
+
     /*
      *  Assigns skill to users, questions to users, questions to test
      */
@@ -78,12 +89,16 @@ class Question extends Model
         return $test;
     }
 
-    public function answered($user, $correctness, $test){
-        $record = ['question_answered' => TRUE,
-            'answered_date' => new DateTime('now'),
-            'correct' =>$correctness,
-            'user_id' => $user->id,
-            'attempts' => $this->attempts($user->id) + 1];
-        return $this->tests()->sync([$test->id=>$record], false);
+    /*
+     *  Assigns skill to users, questions to users, questions to quiz, quiz to user.
+     */
+    public function assignQuiz($user, $quiz, $house){
+        $this->users()->sync([$user->id=>['quiz_id'=>$quiz->id]], false);
+        $this->skill->users()->sync([$user->id], false);
+        $this->quizzes()->sync([$quiz->id], false);
+        $quiz->skills()->sync([$this->skill_id], false);
+        $track = $this->skill->tracks()->pluck('id')->intersect($house->tracks()->pluck('id'));
+        $user->testedTracks()->sync($track, false);
+        return $quiz;
     }
 }

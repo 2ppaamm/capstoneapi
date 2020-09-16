@@ -214,7 +214,7 @@ class User extends Model implements AuthenticatableContract,
 
     // questions
     public function myQuestions(){
-        return $this->belongsToMany(Question::class)->withPivot('question_answered', 'answered_date','correct','attempts','test_id')->withTimestamps();
+        return $this->belongsToMany(Question::class)->withPivot('question_answered', 'answered_date','correct','attempts','test_id','quiz_id','assessment_type')->withTimestamps();
     }
 
     public function unansweredQuestions(){
@@ -229,6 +229,10 @@ class User extends Model implements AuthenticatableContract,
         return $this->myQuestions()->whereCorrect(0);
     }
 
+    public function correctQuestions(){
+        return $this->myQuestions()->whereCorrect(TRUE);
+    }
+
     public function myQuestionPresent($question_id){
         return $this->myQuestions()->whereQuestionId($question_id)->first();
     }
@@ -238,6 +242,10 @@ class User extends Model implements AuthenticatableContract,
     }
 
     //quizzes
+
+    public function quiz(){
+        return $this->hasMany(Quiz::class);
+    }
 
     public function quizzes(){
         return $this->belongsToMany(Quiz::class)->withPivot('quiz_completed','completed_date', 'result', 'attempts')->withTimestamps();
@@ -254,7 +262,6 @@ class User extends Model implements AuthenticatableContract,
     public function completedquizzes(){
         return $this->quizzes()->whereQuizCompleted(1);
     }
-
 
     //query scopes
 
@@ -304,6 +311,15 @@ class User extends Model implements AuthenticatableContract,
 
     public function errorlogs(){
         return $this->hasMany(ErrorLog::class);
+    }
+
+    public function calculateQuizScore($quiz){
+        $quiz_questions = $this->myquestions()->whereQuizId($quiz->id)->count();
+        $correct = $this->myquestions()->whereQuizId($quiz->id)->whereCorrect(TRUE)->count();
+        $this->game_level = $this->game_level + $correct;  // add kudos
+        $this->diagnostic = FALSE;
+        $this->save();                                          //save maxile and game results
+        return $score = number_format($correct/$quiz_questions * 100, 2, '.', '') ;        
     }
 
     public function calculateUserMaxile($test){        

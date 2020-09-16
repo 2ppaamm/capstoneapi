@@ -3,6 +3,7 @@
 namespace App;
 
 use Illuminate\Database\Eloquent\Model;
+use DateTime;
 
 class Quiz extends Model
 {
@@ -44,15 +45,13 @@ class Quiz extends Model
 //    2020-08-31 chen bing add
     public function questions()
     {
-//        return $this->belongsToMany(QuestionQuiz::class);
-        return $this->hasMany(QuestionQuiz::class);
+        return $this->belongsToMany(Question::class);
 
     }
 
     public function skills()
     {
-//        return $this->belongsToMany(QuizSkill::class);
-        return $this->hasMany(QuizSkill::class);
+        return $this->belongsToMany(Skill::class)->withTimestamps();
     }
 
     public function quizzer()
@@ -65,6 +64,11 @@ class Quiz extends Model
         return $this->belongsToMany(User::class, 'quiz_user')->withPivot('quiz_completed','completed_date', 'result', 'attempts')->withTimestamps();
     }
 
+
+    public function attempts($userid){
+        return $this->quizzees()->whereUserId($userid)->select('attempts')->first();
+    }
+
     public function houses()
     {
 //        return $this->belongsToMany(HouseQuiz::class, 'house_quiz')->withTimestamps();
@@ -72,30 +76,46 @@ class Quiz extends Model
         return $this->hasMany(HouseQuiz::class);
     }
 
-    public function user_questions()
-    {
-        return $this->belongsToMany(User::class, 'question_quiz_user')->withPivot('attempts', 'correct', 'question_answered', 'question_id', 'answered_date')->withTimestamps();
-    }
-
-    public function unansweredQuestions($user_id)
-    {
-        return $this->user_questions()->whereAttempts(FALSE)->whereUser_id($user_id);
-    }
-
-    public function answeredQuestions($user_id)
-    {
-        return $this->user_questions()->where('attempts', '>', '0')->whereUser_id($user_id);
-    }
-
     public function fieldQuestions($user){
         $questions = collect([]);
-
-        // find the questions to send to frontend, send 5 at a time.
-        $questions = \App\Question::whereIn('skill_id', House::findorFail($user->enrolledClasses()->first()->house_id)->skills()->pluck('id'))->get();
+        $current_house = House::findorFail($user->enrolledClasses()->first()->house_id);
+        if ($this->quizzees()->wherePivot('user_id',$user->id)->latest()->first()->pivot->quiz_completed){
+            return response()->json(['message'=>'Quiz has completed', "code"=>500], 500);
+        }
+        if (count($this->questions)<1) {
+            if ($this->diagnostic) {
+                $questions = \App\Question::whereIn('skill_id',$current_house->skills()->pluck('id'))->where('source', 'LIKE', '%diagnostic%')->get();   
+            } else {
+                $current_track_questions = Question::whereIn('skill_id', Skill_Track::whereTrackId($current_house->current_track()->pluck('id'))->pluck('skill_id'))->get();
+                $questions = $current_track_questions->diff($user->correctQuestions)->take(10);
+                if (count($questions)<10) {
+                    $num = 10 - count($questions);
+                    $taught_tracks_questions = Question::whereIn('skill_id', Skill_Track::whereTrackId($current_house->taught_tracks()->pluck('id'))->pluck('skill_id'))->take(num);
+                    $questions = $questions->merge($taught_tracks_questions);
+                    if (count($questions)<10){
+                        $untaught_tracks = $current_house->tracks->diff($current_house->taught_tracks)->diff($current_house->current_track)->pluck('id');
+                        $questions = Question::whereIn('skill_id', Skill_Track::whereTrackId($untaught_tracks)->take(10 - count($questions)));
+                    }
+                }
+                $questions = count($questions) < 1 ? Question::all()->random(10) : $questions;
+            }
+            foreach ($questions as $question) {
+                 $question->assignQuiz($user,$this, $current_house);
+            }   
+        } else {
+            $quizcomplete = $this->quizzees()->whereUserId($user->id)->latest()->first()->quiz_completed;
+            $quizcomplete = (count($user->answeredQuestion()->whereQuizId($this->id)->get()) == count($this->questions)) ? TRUE : FALSE;
+            if ($quizcomplete) {
+                $message = "Quiz completed successfully. For detailed reports on results, please contact us at math@allgifted.com.";
+                return $this->completeQuiz($message, $user);                
+            }
+            $questions = $user->unansweredQuestions()->whereQuizId($this->id)->get();
+        }        
+ 
 
         /* Finding the 5 questions to return:
-         * 1. If !$question_quiz_user->attempts>0, $questions = !$question_quiz_user->attempts 
-         * 2. If no question in !question_quiz_user->attempts for this quiz,
+         * 1. If !$question_user->attempts>0, $questions = !$question_user->attempts 
+         * 2. If no question in !question_quiz,
          *    a. if $quiz_user->completed, return error, 500.
          *    b. If $quiz->diagnostic, find $questions with skill_id in tracks in $user->enrolledClasses 
          *       with $question->source = "diagnostic". 
@@ -110,12 +130,19 @@ class Quiz extends Model
          *          where $housetrack->end_date < today and in skill where !$user_skill->skill_passed
          *    d. When count($questions)>=10:
          *       i. $questions->take(10)
-         *       ii. fill user_skill, user_track and question_quiz_user with the related skill, track, quiz 
+         *       ii. fill skill_skill, user_track and question_quiz with the related skill, track, quiz 
          *           and question information.
          *  2. if count($questions)>5 return $questions->take(5) else return $questions to front end
          * 
          */       
-        return response()->json(['message' => 'Questions fetched', 'quiz'=>$this->id, 'questions'=>$questions, 'code'=>201]);
+        return response()->json(['message' => 'Questions fetched', 'quiz'=>$this->id, 'questions'=>$questions->take(5), 'code'=>201]);
     }
 
+    public function completeQuiz($message, $user){
+        $attempts = $this->attempts($user->id);
+        $attempts = $attempts ? $attempts->attempts : 1;
+        $result = $user->calculateQuizScore($this);
+        $this->quizzees()->sync([$user->id=>['quiz_completed'=>TRUE, 'completed_date'=>new DateTime('now'), 'result'=>$result, 'attempts'=> $attempts + 1]]); 
+        return response()->json(['message'=>$message, 'test'=>$this->id, 'percentage'=>$result, 'score'=>'not calculated', 'maxile'=> 'Not calculated','kudos'=>'Not elgibile for', 'code'=>206], 206);
+    }
 }

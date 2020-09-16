@@ -34,7 +34,15 @@ class AddSomeColumnToQuizTable extends Migration
     public function down()
     {
         Schema::table('quizzes', function (Blueprint $table) {
-            //
+            $table->dropColumn('diagnostic');
+            $table->dropColumn('image');
+            $table->dropColumn('start_available_time');
+            $table->dropColumn('end_available_time');
+            $table->dropColumn('due_time');
+            $table->dropColumn('number_of_tries_allowed');
+            $table->dropColumn('which_result');
+            $table->dropForeign(['status_id']);
+            $table->dropColumn('status_id');
         });
     }
 }
