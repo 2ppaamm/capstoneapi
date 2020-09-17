@@ -171,13 +171,14 @@ class DiagnosticController extends Controller
     public function report($id){
         $logon_user = Auth::user();
         if ($logon_user->id && !$logon_user->is_admin) {
-            return response()->json(['message' => 'You have no access rights to set user to do diagnostic','code'=>401], 401);
+            return response()->json(['message' => 'You have no access rights to do a report','code'=>401], 401);
         }
 
         $user = User::findOrFail($id);
         $latest_test = $user->tests()->orderBy('start_available_time','desc')->first();
 
         $result = null;
+        $questions_done = null;
         $note = null;
         //tests
         if (count($user->tests)<1) {
@@ -190,6 +191,29 @@ class DiagnosticController extends Controller
                 $result = $test->pivot->completed_date ? $result. "\x0DTest: ".$test->description.'  Result:'.$test->pivot->result."%.":$result."\x0DTest:".$test->description.":  Did not complete test.";   
             }
 
+        }
+
+        if (count($user->myQuestions)<1) {
+            $questions_done = "No question answered";
+        } else {
+            $correct_questions = $user->myQuestions()->whereCorrect(TRUE)->get();
+            $incorrect_questions = $user->myQuestions()->whereCorrect(FALSE)->get();
+            if (count($incorrect_questions)<1) {
+                $questions_done = "You didn't answer any question wrongly.";
+            } else {
+                $questions_done = "\x0DThese are the questions you have gotten wrong: \x0D";
+                foreach ( $incorrect_questions as $question) {
+                    $questions_done = "\x0D".$questions_done.$question->question."\x0DSkill:".$question->skill->id;                
+                }
+            }
+            if (count($correct_questions)<1) {
+                $questions_done = $questions_done."\x0DYou didn't answer any question correctly.";
+            } else {
+                $questions_done = $questions_done."\x0DThese are the questions you have gotten correct: \x0D";
+                foreach ( $correct_questions as $question) {
+                    $questions_done = "\x0D".$questions_done.$question->question."\x0DSkill:".$question->skill->id;                
+                }
+            }
         }
         $skillpassed = null; 
         $skillfailed = null;
@@ -212,8 +236,8 @@ class DiagnosticController extends Controller
 
         $note = $note."\x0D\x0DYou did a total of another ".(count($user->tests)-1)." quizzes. Your results are: \x0D".$result.
 
-            "\x0D\x0DIn total, you have answered ".count($user->myQuestions)." questions. Out of which you obtained ".$user->myQuestions()->sum('correct')." of them correct. 
-            \x0D\x0DThe skills you passed are: ".$skillpassed."\x0D\x0DThe skills you attempted and did not pass are:".$skillfailed.
+            "\x0D\x0DIn total, you have answered ".count($user->myQuestions)." questions. Out of which you obtained ".$user->myQuestions()->sum('correct')." of them correct.".$questions_done.
+            "\x0DThe skills you passed are: ".$skillpassed."\x0D\x0DThe skills you attempted and did not pass are:".$skillfailed.
             "\x0D\x0DAs such, your maxile level is now at ".$user->maxile_level.".";
 
         Mail::send([],[], function ($message) use ($user,$note) {
