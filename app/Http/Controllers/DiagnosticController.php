@@ -43,15 +43,25 @@ class DiagnosticController extends Controller
 
         if (!count($enrolled)) return response()->json(['message'=>'Not properly enrolled or first time user', 'code'=>203]);
 
-        $house = $enrolled->first();
-        if (count($allreadyenrolled)) {
+        $house = \App\House::findOrFail($enrolled->first()->house_id);
+
+        if (count($allreadyenrolled)>0) {
             $diagnostic = !count($user->completedquizzes) || $user->diagnostic ? TRUE : FALSE;
-            $quiz = count($user->incompletequizzes) ? $diagnostic ? $house->quizzes()->latest()->first() : $user->incompletequizzes()->latest()->first():null;
+            $quiz_name = $diagnostic ? $house->house : $user->name;
+            //if (user has incomplete quizzes)
+            //    if diagnostic
+            //        if there is a house quiz
+            //            $quiz = house quiz
+            //        else null
+            //    else incomplete quiz
+            //else null
 
-            $new_quiz = !$quiz ? $user->quizzes()->create(['quiz'=>$diagnostic ? $house->house : $user->name."'s ".date("m/d/Y")." AllReady Quiz",'description'=> $diagnostic ? $house->house : $user->name."'s ".date("m/d/Y")." AllReady Quiz", 'start_available_time'=> date('Y-m-d', strtotime('-1 day')), 'end_available_time'=>date('Y-m-d', strtotime('+1 month')),'diagnostic'=>$diagnostic]): $quiz;
+            $quiz = count($user->incompletequizzes) ? $diagnostic ? $house->quizzes ? $house->quizzes()->latest()->first() : null : $user->incompletequizzes()->latest()->first():null;
 
-            $diagnostic ? $house->quizzes()->sync([$new_quiz->id], false):null;
-            return $new_quiz->fieldQuestions($user);                // output quiz questions
+            $new_quiz = !$quiz ? $user->quizzes()->create(['quiz'=>$quiz_name."'s ".date("m/d/Y")." AllReady Quiz",'description'=> $quiz_name."'s ".date("m/d/Y")." AllReady Quiz", 'start_available_time'=> date('Y-m-d', strtotime('-1 day')), 'end_available_time'=>date('Y-m-d', strtotime('+1 month')),'diagnostic'=>$diagnostic]): $quiz;
+
+            $diagnostic ? $new_quiz->houses()->sync([$house->id], false):null;
+            return $new_quiz->fieldQuestions($user, $house);                // output quiz questions
         }
 
         $test = count($user->currenttest)<1 ? !count($user->completedtests) || $user->diagnostic ? 
@@ -108,6 +118,7 @@ class DiagnosticController extends Controller
      */
     public function answer(CreateQuizAnswersRequest $request){
         $user = Auth::user();
+        $house = \App\House::findOrFail($user->enrolledClasses()->latest()->first()->house_id);
         $quiz = $user->quizzes()->latest()->first();
         $test = \App\Test::find($request->test);
         if (!$test && !$quiz){
@@ -152,7 +163,7 @@ class DiagnosticController extends Controller
             }
         }
 
-        return !$quiz ? $test->fieldQuestions($user): $quiz->fieldQuestions($user);
+        return !$quiz ? $test->fieldQuestions($user): $quiz->fieldQuestions($user, $house);
     }
     /**
      * Enrolls a student 
@@ -241,8 +252,8 @@ class DiagnosticController extends Controller
             "\x0D\x0DAs such, your maxile level is now at ".$user->maxile_level.".";
 
         Mail::send([],[], function ($message) use ($user,$note) {
-            $message->from(env("MAIL_ORDER_ADDRESS"), 'All Gifted Admin')
-                    ->to('info.allgifted@gmail.com')
+            $message->from("info.allgfited@gmail.com", 'All Gifted Admin')
+                    ->to('math.allgifted.com')
                     ->subject($user->name."'s report")
                     ->setBody($note, 'text/html');
         });

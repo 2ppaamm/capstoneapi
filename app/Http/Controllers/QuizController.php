@@ -285,6 +285,6 @@ class QuizController extends Controller
 
     public function create()
     {
-        return ['statuses' => Status::select('id','status','description')->get(), 'skills' => Skill::select('id','skill','description')->get()];
+        return ['statuses' => Status::select('id','status','description')->get(), 'skills' => Skill::select('id','skill','description')->get(), 'houses'=>House::select('id','house','description')->get()];
     }
 }

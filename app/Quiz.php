@@ -71,48 +71,51 @@ class Quiz extends Model
 
     public function houses()
     {
-//        return $this->belongsToMany(HouseQuiz::class, 'house_quiz')->withTimestamps();
+        return $this->belongsToMany(House::class)->withTimestamps();
 //        return $this->hasMany(HouseQuiz::class, 'house_quiz')->withTimestamps();
-        return $this->hasMany(HouseQuiz::class);
+//        return $this->hasMany(HouseQuiz::class);
     }
 
-    public function fieldQuestions($user){
+    public function fieldQuestions($user, $house){
         $questions = collect([]);
-        $current_house = House::findorFail($user->enrolledClasses()->first()->house_id);
+        $current_house = $house;
         if ($this->quizzees()->wherePivot('user_id',$user->id)->latest()->first()->pivot->quiz_completed){
             return response()->json(['message'=>'Quiz has completed', "code"=>500], 500);
         }
         if (count($this->questions)<1) {
             if ($this->diagnostic) {
-                $questions = \App\Question::whereIn('skill_id',$current_house->skills()->pluck('id'))->where('source', 'LIKE', '%diagnostic%')->get();   
+                 $questions = \App\Question::whereIn('skill_id',$current_house->skills()->pluck('id'))->where('source', 'LIKE', '%diagnostic%')->get();   
             } else {
-                $current_track_questions = Question::whereIn('skill_id', Skill_Track::whereTrackId($current_house->current_track()->pluck('id'))->pluck('skill_id'))->get();
-                $questions = $current_track_questions->diff($user->correctQuestions)->take(10);
+                if(count($current_house->current_track)>0){
+                    $current_track_questions =  Question::whereIn('skill_id', Skill_Track::whereTrackId($current_house->current_track()->pluck('id'))->pluck('skill_id'))->get();
+                    $questions = $current_track_questions->diff($user->correctQuestions);      
+                }
                 if (count($questions)<10) {
-                    $num = 10 - count($questions);
-                    $taught_tracks_questions = Question::whereIn('skill_id', Skill_Track::whereTrackId($current_house->taught_tracks()->pluck('id'))->pluck('skill_id'))->take(num);
-                    $questions = $questions->merge($taught_tracks_questions);
-                    if (count($questions)<10){
-                        $untaught_tracks = $current_house->tracks->diff($current_house->taught_tracks)->diff($current_house->current_track)->pluck('id');
-                        $questions = Question::whereIn('skill_id', Skill_Track::whereTrackId($untaught_tracks)->take(10 - count($questions)));
+                    if (count($current_house->taught_tracks)>0){
+                        $taught_tracks_questions = Question::whereIn('skill_id', Skill_Track::whereTrackId($current_house->taught_tracks()->pluck('id'))->pluck('skill_id'))->get();
+                        $questions = $taught_tracks_questions ? $questions->merge($taught_tracks_questions) : $questions;
                     }
                 }
-                $questions = count($questions) < 1 ? Question::all()->random(10) : $questions;
-            }
-            foreach ($questions as $question) {
-                 $question->assignQuiz($user,$this, $current_house);
+
+                if (count($questions)<10){
+                    $untaught_tracks = $current_house->tracks->diff($current_house->taught_tracks)->diff($current_house->current_track)->pluck('id');
+                    $questions = Question::whereIn('skill_id', Skill_Track::whereTrackId($untaught_tracks))->get();
+                }
+                $questions = count($questions) < 1 ? Question::all()->random(10) : $questions->take(10);
+                foreach ($questions as $question) {
+                    $question->assignQuiz($user,$this, $current_house);
+                }
             }   
         } else {
+            $questions = $user->unansweredQuestions()->whereQuizId($this->id)->get();
             $quizcomplete = $this->quizzees()->whereUserId($user->id)->latest()->first()->quiz_completed;
-            $quizcomplete = (count($user->answeredQuestion()->whereQuizId($this->id)->get()) == count($this->questions)) ? TRUE : FALSE;
+            $quizcomplete = (count($user->answeredQuestion()->whereQuizId($this->id)->get()) == count($this->questions)) || count($questions)<1 ? TRUE : FALSE;
             if ($quizcomplete) {
                 $message = "Quiz completed successfully. For detailed reports on results, please contact us at math@allgifted.com.";
                 return $this->completeQuiz($message, $user);                
             }
-            $questions = $user->unansweredQuestions()->whereQuizId($this->id)->get();
         }        
  
-
         /* Finding the 5 questions to return:
          * 1. If !$question_user->attempts>0, $questions = !$question_user->attempts 
          * 2. If no question in !question_quiz,
