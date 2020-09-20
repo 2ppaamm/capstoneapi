@@ -21,6 +21,7 @@ class SkillLinkTable extends Migration
             $table->integer('user_id')->unsigned()->default(1);
             $table->foreign('user_id')->references('id')->on('users');
             $table->string('link');
+            $table->boolean('check')->default(TRUE);            
             $table->timestamps();
         });
     }

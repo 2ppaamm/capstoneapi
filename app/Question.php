@@ -73,8 +73,8 @@ class Question extends Model
         $record = ['question_answered' => TRUE,
             'answered_date' => new DateTime('now'),
             'correct' =>$correctness,
-            'test_id' => $test ? $test->id : 1,
-            'quiz_id' => $quiz ? $quiz->id : 1,
+            'test_id' => $test ? $test->id : null,
+            'quiz_id' => $quiz ? $quiz->id : null,
             'attempts' => $this->attempts($user->id) + 1];
         return $this->users()->sync([$user->id=>$record], false);
     }

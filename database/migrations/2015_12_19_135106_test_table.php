@@ -27,6 +27,10 @@ class TestTable extends Migration
             $table->foreign('status_id')->references('id')->on('statuses');
             $table->integer('user_id')->unsigned()->default(2);
             $table->foreign('user_id')->references('id')->on('users')->ondelete('cascade');
+            $table->integer('level_id')->unsigned()->nullable()->default(NULL);
+            $table->foreign('level_id')->references('id')->on('levels');
+            $table->decimal('test_maxile')->default(0.00);
+            $table->integer('noOfSkillsPassed')->default(0);            
             $table->timestamps();
         });
 

@@ -22,6 +22,7 @@ class SkillTable extends Migration
             $table->string('lesson_link')->nullable();
             $table->integer('status_id')->unsigned()->default(1);
             $table->foreign('status_id')->references('id')->on('statuses');
+            $table->integer('track_id')->unsigned()->nullable();
             $table->timestamps();
         });
 

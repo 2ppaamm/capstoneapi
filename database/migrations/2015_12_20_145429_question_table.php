@@ -43,17 +43,30 @@ class QuestionTable extends Migration
         Schema::create('question_user', function (Blueprint $table) {
             $table->integer('question_id')->unsigned();
             $table->foreign('question_id')->references('id')->on('questions');
-            $table->integer('test_id')->unsigned()->default(1);
-            $table->foreign('test_id')->references('id')->on('tests');
+            $table->integer('test_id')->unsigned()->nullable();
+            $table->foreign('test_id')->references('id')->on('tests')->onDelete('cascade');
             $table->integer('user_id')->unsigned()->default(1);
             $table->foreign('user_id')->references('id')->on('users');
+            $table->integer('quiz_id')->unsigned()->nullable();
+            $table->foreign('quiz_id')->references('id')->on('quizzes')->onDelete('cascade');
+            $table->string('assessment_type');
             $table->boolean('question_answered')->default(false);
             $table->boolean('correct')->default(false);
             $table->datetime('answered_date')->nullable();
             $table->integer('attempts')->default(0);
-            $table->primary(['question_id','user_id', 'test_id']);
+            $table->primary(['question_id','user_id']);
             $table->timestamps();
         });
+
+        Schema::create('question_quiz', function (Blueprint $table) {
+            $table->integer('quiz_id')->unsigned();
+            $table->foreign('quiz_id')->references('id')->on('quizzes');
+            $table->integer('question_id')->unsigned()->default(1);
+            $table->foreign('question_id')->references('id')->on('questions');
+            $table->primary(['quiz_id','question_id']);
+            $table->timestamps();
+        });
+
 
     }
 
@@ -64,6 +77,7 @@ class QuestionTable extends Migration
      */
     public function down()
     {
+        Schema::dropIfExists('question_quiz');        
         Schema::drop('question_user');
         Schema::drop('questions');
     }

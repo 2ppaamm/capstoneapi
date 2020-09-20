@@ -20,6 +20,8 @@ class HouseTable extends Migration
             $table->foreign('user_id')->references('id')->on('users');
             $table->integer('course_id')->unsigned()->default(1);
             $table->foreign('course_id')->references('id')->on('courses');
+            $table->integer('framework_id')->unsigned()->nullable()->default(1);
+            $table->foreign('framework_id')->references('id')->on('frameworks');
             $table->string('image')->nullable();
             $table->integer('status_id')->unsigned()->default(4);
             $table->foreign('status_id')->references('id')->on('statuses');
@@ -42,7 +44,10 @@ class HouseTable extends Migration
             $table->foreign('purchaser_id')->references('id')->on('users')->onDelete('cascade');
             $table->date('start_date')->default(date('Y-m-d'));
             $table->date('expiry_date')->default(date('Y-m-d', strtotime('+1 year')));
-            $table->integer('places_alloted')->default(0);            
+            $table->integer('places_alloted')->default(0);
+            $table->decimal('amount_paid', 8,2)->nullable();
+            $table->string('currency_code')->nullable();
+            $table->string('payment_status')->nullable();                        
             $table->timestamps();
             $table->primary(['house_id','role_id', 'user_id']);
         });
