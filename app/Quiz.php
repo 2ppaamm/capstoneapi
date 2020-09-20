@@ -111,7 +111,7 @@ class Quiz extends Model
             $quizcomplete = $this->quizzees()->whereUserId($user->id)->latest()->first()->quiz_completed;
             $quizcomplete = (count($user->answeredQuestion()->whereQuizId($this->id)->get()) == count($this->questions)) || count($questions)<1 ? TRUE : FALSE;
             if ($quizcomplete) {
-                $message = "Quiz completed successfully. For detailed reports on results, please contact us at math@allgifted.com.";
+                $message = "Quiz completed successfully. For detailed reports on results, please contact us at kang@allgifted.com.";
                 return $this->completeQuiz($message, $user);                
             }
         }        
