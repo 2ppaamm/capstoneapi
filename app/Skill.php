@@ -76,6 +76,7 @@ class Skill extends Model
      * 
      */
     public function handleAnswer($userid, $difficulty, $correct, $track, $test) {
+        $skill_maxile = 0;
         $userSkill= $this->users()->whereUserId($userid)->select('noOfPasses', 'noOfTries', 'difficulty_passed','noOfFails','skill_maxile','skill_passed')->first();
 
         if ($userSkill) {
