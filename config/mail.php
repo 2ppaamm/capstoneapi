@@ -28,7 +28,7 @@ return [
     |
     */
 
-    'host' => env('MAIL_HOST', 'smtp.gmail.com'),
+    'host' => env('MAIL_HOST', 'smtp.googlemail.com'),
 
     /*
     |--------------------------------------------------------------------------
@@ -41,7 +41,7 @@ return [
     |
     */
 
-    'port' => env('MAIL_PORT', 587),
+    'port' => env('MAIL_PORT', 465),
 
     /*
     |--------------------------------------------------------------------------
@@ -54,7 +54,7 @@ return [
     |
     */
 
-    'from' => ['address' => 'ace.allgifted@gmail.com', 'name' => 'All Gifted Admin'],
+    'from' => ['address' => 'info.allgifted@gmail.com', 'name' => 'All Gifted Admin'],
 
     /*
     |--------------------------------------------------------------------------
@@ -80,7 +80,7 @@ return [
     |
     */
 
-    'username' => env('MAIL_USERNAME', 'ace.allgifted@gmail.com'),
+    'username' => env('MAIL_USERNAME', 'info.allgifted@gmail.com'),
 
     /*
     |--------------------------------------------------------------------------
@@ -93,7 +93,7 @@ return [
     |
     */
 
-    'password' => env('MAIL_PASSWORD', 'J@ph3rl1m01'),
+    'password' => env('MAIL_PASSWORD', '16Matlock'),
 
     /*
     |--------------------------------------------------------------------------
