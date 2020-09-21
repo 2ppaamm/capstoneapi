@@ -84,7 +84,7 @@ class Quiz extends Model
         }
         if (count($this->questions)<1) {
             if ($this->diagnostic) {
-                 $questions = \App\Question::whereIn('skill_id',$current_house->skills()->pluck('id'))->where('source', 'LIKE', '%diagnostic%')->get();   
+                $questions = \App\Question::whereIn('skill_id',$current_house->skills()->pluck('id'))->get();   
             } else {
                 if(count($current_house->current_track)>0){
                     $current_track_questions =  Question::whereIn('skill_id', Skill_Track::whereTrackId($current_house->current_track()->pluck('id'))->pluck('skill_id'))->get();
