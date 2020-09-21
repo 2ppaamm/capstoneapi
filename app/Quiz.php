@@ -79,9 +79,9 @@ class Quiz extends Model
     public function fieldQuestions($user, $house){
         $questions = collect([]);
         $current_house = $house;
-        if ($this->quizzees()->wherePivot('user_id',$user->id)->first()->quiz_completed){
-            return response()->json(['message'=>'Quiz has completed', "code"=>500], 500);
-        }
+//        if ($user->quizzes()->where('quiz_id',$this->id)->first()->quiz_completed){
+//            return response()->json(['message'=>'Quiz has completed', "code"=>500], 500);
+//        }
         if (count($this->questions)<1) {
             if ($this->diagnostic) {
                 $questions = \App\Question::whereIn('skill_id',$current_house->skills()->pluck('id'))->get();   
@@ -110,7 +110,7 @@ class Quiz extends Model
    
         } else {
             $questions = $user->unansweredQuestions()->whereQuizId($this->id)->get();
-            $quizcomplete = $this->quizzees()->whereUserId($user->id)->latest()->first()->quiz_completed;
+            $quizcomplete = $user->quizzes()->whereQuizId($this->id)->first()->quiz_completed;
             $quizcomplete = (count($user->answeredQuestion()->whereQuizId($this->id)->get()) == count($this->questions)) || count($questions)<1 ? TRUE : FALSE;
             if ($quizcomplete) {
                 $message = "Quiz completed successfully. For detailed reports on results, please contact us at kang@allgifted.com.";
