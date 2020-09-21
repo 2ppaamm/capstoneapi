@@ -43,10 +43,7 @@ class HouseTrackController extends Controller
      */
     public function store(Request $request, House $house)
     {
-        return $house;
-        $house->tracks()->sync($request->all(),false);
-/* for later implementation
-
+/* when ready
         foreach ($request->track as $track_id=>$linktrack){
             if ($track=Track::find($track_id)){
                 $track->houses()->sync([$house->id=>$linktrack], false);
@@ -55,6 +52,8 @@ class HouseTrackController extends Controller
             } 
         }
 */
+        $house->tracks()->sync($request->all(), false);
+
         return response()->json(['message' => 'Track(s) correctly added to house', 'tracks added'=>$house->tracks,'code'=>201]);
     }
 
