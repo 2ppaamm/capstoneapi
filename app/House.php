@@ -111,6 +111,6 @@ class House extends Model
     }
 
     public function scopeSkills($query){
-        return Skill::whereIn('id',Skill_Track::whereIn('track_id',$this->tracks()->pluck('id'))->pluck('skill_id'))->get();
+         return Skill::whereIn('id',Skill_Track::whereIn('track_id',$this->tracks()->pluck('id'))->pluck('skill_id'))->get();
     }
 }

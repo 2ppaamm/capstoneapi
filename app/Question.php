@@ -45,7 +45,7 @@ class Question extends Model
     }
 
     public function users(){
-        return $this->belongsToMany(User::class)->withPivot('question_answered', 'answered_date','correct', 'test_id','attempts')->withTimestamps();
+        return $this->belongsToMany(User::class, 'question_user')->withPivot('question_answered', 'answered_date','correct', 'test_id','attempts')->withTimestamps();
     }
 
     public function tests(){
@@ -93,9 +93,9 @@ class Question extends Model
      *  Assigns skill to users, questions to users, questions to quiz, quiz to user.
      */
     public function assignQuiz($user, $quiz, $house){
-        $this->users()->sync([$user->id=>['quiz_id'=>$quiz->id]], false);
-        $this->skill->users()->sync([$user->id], false);
-        $this->quizzes()->sync([$quiz->id], false);
+        $user->myQuestions()->attach([$this->id=>['quiz_id'=>$quiz->id]]);
+        $user->skill_user()->sync([$this->skill_id],false);
+        $this->quizzes()->sync([$quiz->id],false);
         $quiz->skills()->sync([$this->skill_id], false);
         $track = $this->skill->tracks()->pluck('id')->intersect($house->tracks()->pluck('id'));
         $user->testedTracks()->sync($track, false);

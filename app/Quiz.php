@@ -79,7 +79,7 @@ class Quiz extends Model
     public function fieldQuestions($user, $house){
         $questions = collect([]);
         $current_house = $house;
-        if ($this->quizzees()->wherePivot('user_id',$user->id)->latest()->first()->pivot->quiz_completed){
+        if ($this->quizzees()->wherePivot('user_id',$user->id)->latest()->first()->quiz_completed){
             return response()->json(['message'=>'Quiz has completed', "code"=>500], 500);
         }
         if (count($this->questions)<1) {
@@ -102,10 +102,12 @@ class Quiz extends Model
                     $questions = Question::whereIn('skill_id', Skill_Track::whereTrackId($untaught_tracks))->get();
                 }
                 $questions = count($questions) < 1 ? Question::all()->random(10) : $questions->take(10);
-                foreach ($questions as $question) {
-                    $question->assignQuiz($user,$this, $current_house);
-                }
-            }   
+            }
+
+            foreach ($questions as $question) {
+                $question->assignQuiz($user,$this, $current_house);
+            }
+   
         } else {
             $questions = $user->unansweredQuestions()->whereQuizId($this->id)->get();
             $quizcomplete = $this->quizzees()->whereUserId($user->id)->latest()->first()->quiz_completed;
