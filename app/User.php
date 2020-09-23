@@ -319,7 +319,8 @@ class User extends Model implements AuthenticatableContract,
         $this->game_level = $this->game_level + $correct;  // add kudos
         $this->diagnostic = FALSE;
         $this->save();                                          //save maxile and game results
-        return $score = number_format($correct/$quiz_questions * 100, 2, '.', '') ;        
+        $correct_questions = $quiz_questions ? $correct/$quiz_questions : 0;
+        return $score = number_format($correct_questions * 100, 2, '.', '') ;        
     }
 
     public function calculateUserMaxile($test){        

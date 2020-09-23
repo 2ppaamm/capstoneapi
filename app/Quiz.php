@@ -99,7 +99,7 @@ class Quiz extends Model
 
                 if (count($questions)<10){
                     $untaught_tracks = $current_house->tracks->diff($current_house->taught_tracks)->diff($current_house->current_track)->pluck('id');
-                    $questions = Question::whereIn('skill_id', Skill_Track::whereTrackId($untaught_tracks))->get();
+                    $questions = Question::whereIn('skill_id', Skill_Track::whereTrackId($untaught_tracks)->pluck('skill_id'))->get();
                 }
                 $questions = count($questions) < 1 ? Question::all()->random(10) : $questions->take(10);
             }
@@ -110,8 +110,7 @@ class Quiz extends Model
    
         } else {
             $questions = $user->unansweredQuestions()->whereQuizId($this->id)->get();
-            $quizcomplete = $user->quizzes()->whereQuizId($this->id)->first()->quiz_completed;
-            $quizcomplete = (count($user->answeredQuestion()->whereQuizId($this->id)->get()) == count($this->questions)) || count($questions)<1 ? TRUE : FALSE;
+            $quizcomplete = count($questions) < 1 ?  TRUE : FALSE;
             if ($quizcomplete) {
                 $message = "Quiz completed successfully. For detailed reports on results, please contact us at kang@allgifted.com.";
                 return $this->completeQuiz($message, $user);                
