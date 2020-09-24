@@ -93,6 +93,14 @@ class House extends Model
         return $this->belongsToMany(Quiz::class)->withPivot('start_date','end_date','result','attempts','which_attempt')->withTimestamps();
     }
 
+    public function valid_quizzes() {
+        return $this->quizzes()->where('start_available_time', '<=', new DateTime('today'))->where('end_available_time','>=', new DateTime('today'));
+    }
+
+    public function incomplete_housequiz($user){
+        return $user->quizzes()->whereIn('quiz_id',$this->valid_quizzes()->pluck('id'))->whereQuizCompleted(FALSE)->get();
+    }
+
     public function current_track(){
         return $this->belongsToMany(Track::class)->withPivot('track_order','start_date', 'end_date')->wherePivot('start_date','<',new DateTime('today'))->wherePivot('end_date','>',new DateTime('today'));
     }

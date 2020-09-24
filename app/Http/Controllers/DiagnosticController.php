@@ -36,7 +36,7 @@ class DiagnosticController extends Controller
     public function index(){
         $courses = Course::where('course', 'LIKE', '%Math%')->pluck('id'); //any math course id
         $allreadycourses = Course::where('course','LIKE','%AllReady%')->pluck('id'); //all ready course id
- 
+        $quiz=[]; 
         $user = Auth::user();
         $enrolled = $user->validEnrolment($courses); //all math courses enrolled in
         $allreadyenrolled = $user->validEnrolment($allreadycourses); //allready enrolled
@@ -46,21 +46,34 @@ class DiagnosticController extends Controller
         $house = \App\House::findOrFail($enrolled->first()->house_id);
 
         if (count($allreadyenrolled)>0) {
-            $diagnostic = !count($user->completedquizzes) || $user->diagnostic ? TRUE : FALSE;
+            $diagnostic = count($user->completedquizzes)<1 || $user->diagnostic ? TRUE : FALSE;
             $quiz_name = $diagnostic ? $house->house : $user->name;
-            //if (user has incomplete quizzes)
-            //    if diagnostic
-            //        if there is a house quiz
-            //            $quiz = house quiz
-            //        else null
-            //    else incomplete quiz
-            //else null
 
-            $quiz = count($user->incompletequizzes) ? $diagnostic ? $house->quizzes ? $house->quizzes()->latest()->first() : null : $user->incompletequizzes()->latest()->first():null;
+            //if there's no valid house quiz
+            //   if there's incompleted quiz, $quiz = incomplete quiz
+            //   else create new quiz
+            //elseif users have inomplete house quizzes
+            //      $quiz = valid housequiz
+            //    else $quiz= new quiz
+            
+            if (count($house->valid_quizzes) < 1){
+                if (count($user->incompletequizzes) > 0){
+                    $quiz = $user->incompletequizzes()->first();   
+                }
+            }
+            elseif (count($house->incomplete_housequiz($user))>0){    //there are valid house quizzes
+                    $quiz = $house->incomplete_housequiz($user)->first();
+                }
+                else {
+                   $quiz = $house->valid_quizzes()->whereNotIn('quiz_id', $user->quizzes()->pluck('id'))->first();
+                }
+
 
             $new_quiz = !$quiz ? $user->quizzes()->create(['quiz'=>$quiz_name."'s ".date("m/d/Y")." AllReady Quiz",'description'=> $quiz_name."'s ".date("m/d/Y")." AllReady Quiz", 'start_available_time'=> date('Y-m-d', strtotime('-1 day')), 'end_available_time'=>date('Y-m-d', strtotime('+1 month')),'diagnostic'=>$diagnostic]): $quiz;
 
-            $diagnostic ? $new_quiz->houses()->sync([$house->id], false):null;
+            $new_quiz->houses()->sync([$house->id], false);
+            $new_quiz->quizzees()->sync([$user->id], false);
+
             return $new_quiz->fieldQuestions($user, $house);                // output quiz questions
         }
 

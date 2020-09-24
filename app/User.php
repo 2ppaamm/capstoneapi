@@ -218,11 +218,11 @@ class User extends Model implements AuthenticatableContract,
     }
 
     public function unansweredQuestions(){
-        return $this->myQuestions()->whereQuestionAnswered(0);
+        return $this->myQuestions()->whereQuestionAnswered(FALSE);
     }
 
     public function answeredQuestion(){
-        return $this->myQuestions()->whereQuestionAnswered(1);
+        return $this->myQuestions()->whereQuestionAnswered(TRUE);
     }
 
     public function incorrectQuestions(){
@@ -252,7 +252,7 @@ class User extends Model implements AuthenticatableContract,
     }
 
     public function incompletequizzes(){
-        return $this->quizzes()->whereQuizCompleted(0)->where('start_available_time', '<=', new DateTime('today'))->where('end_available_time','>=', new DateTime('today'))->orderBy('created_at','desc');
+        return $this->quizzes()->whereQuizCompleted(FALSE)->where('start_available_time', '<=', new DateTime('today'))->where('end_available_time','>=', new DateTime('today'))->orderBy('created_at','desc');
     }
 
     public function currentquiz(){

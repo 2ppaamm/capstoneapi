@@ -79,14 +79,15 @@ class Quiz extends Model
     public function fieldQuestions($user, $house){
         $questions = collect([]);
         $current_house = $house;
-//        if ($user->quizzes()->where('quiz_id',$this->id)->first()->quiz_completed){
-//            return response()->json(['message'=>'Quiz has completed', "code"=>500], 500);
-//        }
+        if ($user->quizzes()->where('quiz_id',$this->id)->first()->quiz_completed){
+            return response()->json(['message'=>'Quiz has completed', "code"=>500], 500);
+        }
+
         if (count($this->questions)<1) {
             if ($this->diagnostic) {
                 $questions = \App\Question::whereIn('skill_id',$current_house->skills()->pluck('id'))->get();   
             } else {
-                if(count($current_house->current_track)>0){
+              if(count($current_house->current_track)>0){
                     $current_track_questions =  Question::whereIn('skill_id', Skill_Track::whereTrackId($current_house->current_track()->pluck('id'))->pluck('skill_id'))->get();
                     $questions = $current_track_questions->diff($user->correctQuestions);      
                 }
@@ -147,6 +148,6 @@ class Quiz extends Model
         $attempts = $attempts ? $attempts->attempts : 1;
         $result = $user->calculateQuizScore($this);
         $this->quizzees()->sync([$user->id=>['quiz_completed'=>TRUE, 'completed_date'=>new DateTime('now'), 'result'=>$result, 'attempts'=> $attempts + 1]]); 
-        return response()->json(['message'=>$message, 'test'=>$this->id, 'percentage'=>$result, 'score'=>'not calculated', 'maxile'=> 'Not calculated','kudos'=>'Not elgibile for', 'code'=>206], 206);
+        return response()->json(['message'=>$message, 'Quiz'=>$this->quiz, 'percentage'=>$result, 'score'=>'not calculated', 'maxile'=> 'AllReady Program : not being calculated','kudos'=>'not elgibile yet for', 'code'=>206], 206);
     }
 }

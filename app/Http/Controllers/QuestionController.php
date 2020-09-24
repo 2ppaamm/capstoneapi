@@ -83,9 +83,19 @@ class QuestionController extends Controller
      */
     public function store(Request $request)
     {
+ 
+
+
         $user = Auth::user();
         $question = $request->except(['question_image','answer0_image','answer1_image','answer2_image','answer3_image']);
         $question['user_id'] = $user->id;
+
+        if ($request->type_id == 2) {
+            $question['answer0'] = $request->answer0 == 'null'? NULL: (int)$request->answer0;
+            $question['answer1'] = $request->answer1 == 'null'? NULL: (int)$request->answer1;
+            $question['answer2'] = $request->answer2 == 'null'? NULL: (int)$request->answer2;
+            $question['answer3'] = $request->answer3 == 'null'? NULL: (int)$request->answer3;
+        }
 
         if ($request->hasFile('question_image')) {
             $q_image='q'.time().'.png';
@@ -188,7 +198,14 @@ class QuestionController extends Controller
             $file = $request->answer3_image->move(public_path('images/questions/answers'), $a3_image.'.png');
         } 
 
-        $question->fill($request->except(['question_image','answer0_image','answer1_image','answer2_image','answer3_image']))->save();
+        if ($question->type_id == 2) {
+            $question['answer0'] = $request->answer0 == 'null'? NULL: intval($request->answer0);
+            $question['answer1'] = !$request->answer1 || $request->answer1 == 'null'? NULL: (int)$request->answer1;
+            $question['answer2'] = !$request->answer2 || $request->answer2 == 'null'? NULL: (int)$request->answer2;
+            $question['answer3'] = !$request->answer3 || $request->answer3 == 'null'? NULL: (int)$request->answer3;
+        }
+
+        $question->fill($request->except(['question_image','answer0_image','answer1_image','answer2_image','answer3_image', 'answer0', 'answer1', 'answer2', 'answer3']))->save();
 
         return response()->json(['message'=>'Question has been updated','question' => $question, 'code'=>200], 200);
     }
