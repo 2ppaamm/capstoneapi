@@ -36,7 +36,7 @@ class DiagnosticController extends Controller
     public function index(){
         $courses = Course::where('course', 'LIKE', '%Math%')->pluck('id'); //any math course id
         $allreadycourses = Course::where('course','LIKE','%AllReady%')->pluck('id'); //all ready course id
-        $quiz=[]; 
+        $quiz=[];
         $user = Auth::user();
         $enrolled = $user->validEnrolment($courses); //all math courses enrolled in
         $allreadyenrolled = $user->validEnrolment($allreadycourses); //allready enrolled
@@ -52,28 +52,27 @@ class DiagnosticController extends Controller
             //if there's no valid house quiz
             //   if there's incompleted quiz, $quiz = incomplete quiz
             //   else create new quiz
-            //elseif users have inomplete house quizzes
-            //      $quiz = valid housequiz
-            //    else $quiz= new quiz
-            
+            //elseif user has inomplete house quizzes
+            //      $quiz = not completed housequiz
+            //    else $quiz= house quiz
+
             if (count($house->valid_quizzes) < 1){
                 if (count($user->incompletequizzes) > 0){
                     $quiz = $user->incompletequizzes()->first();   
                 }
             }
-            elseif (count($house->incomplete_housequiz($user))>0){    //there are valid house quizzes
-                    $quiz = $house->incomplete_housequiz($user)->first();
+            elseif (count($house->incomplete_housequiz($user))>0){    //there are house quizzes incompleed or not attempted
+                    $quiz = $house->incomplete_housequiz($user)->last();
                 }
                 else {
-                   $quiz = $house->valid_quizzes()->whereNotIn('quiz_id', $user->quizzes()->pluck('id'))->first();
+                    $quiz = $house->valid_quizzes->diff($user->quizzes)->last();
                 }
-
 
             $new_quiz = !$quiz ? $user->quizzes()->create(['quiz'=>$quiz_name."'s ".date("m/d/Y")." AllReady Quiz",'description'=> $quiz_name."'s ".date("m/d/Y")." AllReady Quiz", 'start_available_time'=> date('Y-m-d', strtotime('-1 day')), 'end_available_time'=>date('Y-m-d', strtotime('+1 month')),'diagnostic'=>$diagnostic]): $quiz;
 
-            $new_quiz->houses()->sync([$house->id], false);
-            $new_quiz->quizzees()->sync([$user->id], false);
+            $new_quiz->houses()->sync([$house->id=>['start_date'=>date('Y-m-d', strtotime('-1 day')), 'end_date'=>date('Y-m-d', strtotime('+1 month'))]], false);
 
+            $new_quiz->quizzees()->sync([$user->id], false);
             return $new_quiz->fieldQuestions($user, $house);                // output quiz questions
         }
 
@@ -133,7 +132,7 @@ class DiagnosticController extends Controller
         $user = Auth::user();
         $house = \App\House::findOrFail($user->enrolledClasses()->latest()->first()->house_id);
         $quiz = $user->quizzes()->latest()->first();
-        $test = \App\Test::find($request->test);
+        $test = $user->tests()->latest()->first();
         if (!$test && !$quiz){
             return response()->json(['message' => 'Invalid Test/Quiz', 'code'=>405], 405);    
         }

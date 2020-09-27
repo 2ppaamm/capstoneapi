@@ -79,15 +79,16 @@ class Quiz extends Model
     public function fieldQuestions($user, $house){
         $questions = collect([]);
         $current_house = $house;
+
         if ($user->quizzes()->where('quiz_id',$this->id)->first()->quiz_completed){
             return response()->json(['message'=>'Quiz has completed', "code"=>500], 500);
         }
-
+        
         if (count($this->questions)<1) {
             if ($this->diagnostic) {
                 $questions = \App\Question::whereIn('skill_id',$current_house->skills()->pluck('id'))->get();   
             } else {
-              if(count($current_house->current_track)>0){
+                if (count($current_house->current_track)>0){
                     $current_track_questions =  Question::whereIn('skill_id', Skill_Track::whereTrackId($current_house->current_track()->pluck('id'))->pluck('skill_id'))->get();
                     $questions = $current_track_questions->diff($user->correctQuestions);      
                 }
@@ -100,9 +101,11 @@ class Quiz extends Model
 
                 if (count($questions)<10){
                     $untaught_tracks = $current_house->tracks->diff($current_house->taught_tracks)->diff($current_house->current_track)->pluck('id');
-                    $questions = Question::whereIn('skill_id', Skill_Track::whereTrackId($untaught_tracks)->pluck('skill_id'))->get();
+                    $untaught_tracks_questions = Question::whereIn('skill_id', Skill_Track::whereIn('track_id',$untaught_tracks)->pluck('skill_id'))->get();
+                    $questions = (count($untaught_tracks_questions) > 0) ? $questions->merge(Question::whereIn('skill_id', Skill_Track::whereTrackId($untaught_tracks)->pluck('skill_id'))->get()):$questions;
                 }
-                $questions = count($questions) < 1 ? Question::all()->random(10) : $questions->take(10);
+
+                $questions = count($questions) < 10 ? $questions->merge(Question::all()->random(10-count($questions))) : $questions->take(10);
             }
 
             foreach ($questions as $question) {
@@ -113,7 +116,7 @@ class Quiz extends Model
             $questions = $user->unansweredQuestions()->whereQuizId($this->id)->get();
             $quizcomplete = count($questions) < 1 ?  TRUE : FALSE;
             if ($quizcomplete) {
-                $message = "Quiz completed successfully. For detailed reports on results, please contact us at kang@allgifted.com.";
+                $message = $this->quiz." completed successfully. For detailed reports on results, please contact us at kang@allgifted.com.";
                 return $this->completeQuiz($message, $user);                
             }
         }        

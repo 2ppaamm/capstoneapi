@@ -75,6 +75,7 @@ class UserController extends Controller
         $user->fields()->detach();
         $user->skill_user()->detach();
         $user->tests()->detach();
+        $user->quizzes()->detach();
         $user->tests()->delete();
         $user->maxile_level = 0;
         $user->save();
