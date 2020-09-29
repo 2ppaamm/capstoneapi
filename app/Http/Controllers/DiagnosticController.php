@@ -42,21 +42,42 @@ class DiagnosticController extends Controller
         $allreadyenrolled = $user->validEnrolment($allreadycourses); //allready enrolled
 
         if (!count($enrolled)) return response()->json(['message'=>'Not properly enrolled or first time user', 'code'=>203]);
+        $house = \App\House::findOrFail($enrolled->last()->house_id);
 
-        $house = \App\House::findOrFail($enrolled->first()->house_id);
-
-        if (count($allreadyenrolled)>0) {
+        if (count($allreadyenrolled)>0) {                               // if enrolled in AllReady Math program
             $diagnostic = count($user->completedquizzes)<1 || $user->diagnostic ? TRUE : FALSE;
             $quiz_name = $diagnostic ? $house->house : $user->name;
 
-            //if there's no valid house quiz
+            // if $diagnostic
+            //    if housequiz exists
+            //       if user assigned to an incomplete housequiz
+            //             $quiz = latest housequiz assigned to user
+            //       else $quiz = newest housequiz
+            //    else create a new diagnostic house quiz
+            // elseif user has incomplate quizzes
+            //       $quiz = latest incomplete quiz
+            //    else create a new personal quiz
+
+             if ($diagnostic){
+                if ($house->valid_quizzes) {
+                    if (count($house->incomplete_housequiz($user))){
+                       $quiz = $house->incomplete_housequiz($user)->last(); 
+                    } else { 
+                       $quiz = $house->valid_quizzes->diff($user->quizzes)->last(); 
+                    }
+                }
+            } else {
+                if (count($user->incompletequizzes) > 0) {
+                    $quiz = $user->incompletequizzes()->first();
+                }
+             } 
+            //if there's a house quiz and $diagnostic
             //   if there's incompleted quiz, $quiz = incomplete quiz
             //   else create new quiz
             //elseif user has inomplete house quizzes
             //      $quiz = not completed housequiz
             //    else $quiz= house quiz
-
-            if (count($house->valid_quizzes) < 1){
+/*            if (count($house->valid_quizzes) < 1){
                 if (count($user->incompletequizzes) > 0){
                     $quiz = $user->incompletequizzes()->first();   
                 }
@@ -67,10 +88,10 @@ class DiagnosticController extends Controller
                 else {
                     $quiz = $house->valid_quizzes->diff($user->quizzes)->last();
                 }
-
+*/
             $new_quiz = !$quiz ? $user->quizzes()->create(['quiz'=>$quiz_name."'s ".date("m/d/Y")." AllReady Quiz",'description'=> $quiz_name."'s ".date("m/d/Y")." AllReady Quiz", 'start_available_time'=> date('Y-m-d', strtotime('-1 day')), 'end_available_time'=>date('Y-m-d', strtotime('+1 month')),'diagnostic'=>$diagnostic]): $quiz;
 
-            $new_quiz->houses()->sync([$house->id=>['start_date'=>date('Y-m-d', strtotime('-1 day')), 'end_date'=>date('Y-m-d', strtotime('+1 month'))]], false);
+            $diagnostic ? $new_quiz->houses()->sync([$house->id=>['start_date'=>date('Y-m-d', strtotime('-1 day')), 'end_date'=>date('Y-m-d', strtotime('+1 month'))]], false) : null; //assign house quiz
 
             $new_quiz->quizzees()->sync([$user->id], false);
             return $new_quiz->fieldQuestions($user, $house);                // output quiz questions

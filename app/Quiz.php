@@ -78,20 +78,15 @@ class Quiz extends Model
 
     public function fieldQuestions($user, $house){
         $questions = collect([]);
-        $current_house = $house;
-
-        if ($user->quizzes()->where('quiz_id',$this->id)->first()->quiz_completed){
+        $current_house = $house;        
+        if ($user->quizzes()->where('quiz_id',$this->id)->first()->pivot->quiz_completed){
             return response()->json(['message'=>'Quiz has completed', "code"=>500], 500);
         }
-        
         if (count($this->questions)<1) {
-            if ($this->diagnostic) {
-                $questions = \App\Question::whereIn('skill_id',$current_house->skills()->pluck('id'))->get();   
-            } else {
-                if (count($current_house->current_track)>0){
-                    $current_track_questions =  Question::whereIn('skill_id', Skill_Track::whereTrackId($current_house->current_track()->pluck('id'))->pluck('skill_id'))->get();
-                    $questions = $current_track_questions->diff($user->correctQuestions);      
-                }
+            if (!$this->diagnostic) {
+                $current_track_questions =  Question::whereIn('skill_id', Skill_Track::whereTrackId($current_house->current_track()->pluck('id'))->pluck('skill_id'))->get();
+                    $questions = $current_track_questions->diff($user->correctQuestions);
+
                 if (count($questions)<10) {
                     if (count($current_house->taught_tracks)>0){
                         $taught_tracks_questions = Question::whereIn('skill_id', Skill_Track::whereTrackId($current_house->taught_tracks()->pluck('id'))->pluck('skill_id'))->get();
@@ -106,20 +101,29 @@ class Quiz extends Model
                 }
 
                 $questions = count($questions) < 10 ? $questions->merge(Question::all()->random(10-count($questions))) : $questions->take(10);
-            }
+            } else $questions = \App\Question::whereIn('skill_id',$current_house->skills()->pluck('id'))->get();
 
             foreach ($questions as $question) {
                 $question->assignQuiz($user,$this, $current_house);
             }
-   
-        } else {
-            $questions = $user->unansweredQuestions()->whereQuizId($this->id)->get();
-            $quizcomplete = count($questions) < 1 ?  TRUE : FALSE;
-            if ($quizcomplete) {
-                $message = $this->quiz." completed successfully. For detailed reports on results, please contact us at kang@allgifted.com.";
-                return $this->completeQuiz($message, $user);                
+        }
+        else {  
+            if (count($user->myQuestions()->whereQuizId($this->id)->get()) > 0) {
+                $questions = $user->unansweredQuestions()->whereQuizId($this->id)->get();
+            } else {
+                $questions = $this->questions;
+                foreach ($questions as $question) {
+                    $question->assignQuiz($user,$this, $current_house);
+                }                
             }
-        }        
+        }
+
+        $quizcomplete = count($questions) < 1 ?  TRUE : FALSE;
+        if ($quizcomplete) {
+            $message = $this->quiz." completed successfully. For detailed reports on results, please contact us at kang@allgifted.com.";
+            return $this->completeQuiz($message, $user);                
+        }
+                
  
         /* Finding the 5 questions to return:
          * 1. If !$question_user->attempts>0, $questions = !$question_user->attempts 
@@ -151,6 +155,6 @@ class Quiz extends Model
         $attempts = $attempts ? $attempts->attempts : 1;
         $result = $user->calculateQuizScore($this);
         $this->quizzees()->sync([$user->id=>['quiz_completed'=>TRUE, 'completed_date'=>new DateTime('now'), 'result'=>$result, 'attempts'=> $attempts + 1]]); 
-        return response()->json(['message'=>$message, 'Quiz'=>$this->quiz, 'percentage'=>$result, 'score'=>'not calculated', 'maxile'=> 'AllReady Program : not being calculated','kudos'=>'not elgibile yet for', 'code'=>206], 206);
+        return response()->json(['message'=>$message, 'Quiz'=>$this->quiz, 'percentage'=>$result, 'score'=>'not calculated', 'maxile'=> 'AllReady Program : not being calculated','kudos'=>'not eligible yet for', 'code'=>206], 206);
     }
 }

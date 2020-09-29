@@ -78,6 +78,7 @@ class UserController extends Controller
         $user->quizzes()->detach();
         $user->tests()->delete();
         $user->maxile_level = 0;
+        $user->diagnostic = TRUE;
         $user->save();
         return response()->json(['message' => 'Reset for '.$user->name.' is done. There is no more record of activity of student. The game_level of '.$user->game_level .' is maintained.', 'data' => $user, 'code' => 200]);
     }
