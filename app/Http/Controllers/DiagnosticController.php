@@ -247,7 +247,7 @@ class DiagnosticController extends Controller
             } else {
                 $questions_done = $questions_done."\x0DThese are the questions you have gotten correct: \x0D";
                 foreach ( $correct_questions as $question) {
-                    $questions_done = "\x0D".$questions_done.$question->question."\x0DSkill:".$question->skill->id;                
+                    $questions_done = $questions_done."\x0D".$question->question."\x09Skill:".$question->skill->id;                
                 }
             }
         }
