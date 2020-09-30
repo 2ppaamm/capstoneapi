@@ -179,6 +179,10 @@ class DiagnosticController extends Controller
             $track = $question->skill->tracks()->first(); // change logic, take the first track
 
             // calculate and saves maxile at 3 levels: skill, track and user            
+            if ($quiz) {
+                $skill_passed = $question->skill->handleQuiz($user, $question, $correctness);
+            }
+
             if ($test) {
                 $skill_maxile = $question->skill->handleAnswer($user->id, $question->difficulty_id, $correctness, $track, $test);
                 $track_maxile = $track->calculateMaxile($user, $correctness, $test);
@@ -278,7 +282,7 @@ class DiagnosticController extends Controller
         
         $new_maxile = $latest_test ? $user->calculateUserMaxile($latest_test) : 0;
 
-        $note = $note."\x0D\x0DYou did a total of another ".(count($user->tests)-1)." quizzes. Your results are: \x0D".$result.
+        $note = $note."\x0D\x0DYou did a total of another ".(count($user->tests)-1)." tests. Your results are: \x0D".$result.
 
             "\x0D\x0DIn total, you have answered ".count($user->myQuestions)." questions. Out of which you obtained ".$user->myQuestions()->sum('correct')." of them correct.".$questions_done.
             "\x0DThe skills you passed are: ".$skillpassed."\x0D\x0DThe skills you attempted and did not pass are:".$skillfailed.
@@ -286,7 +290,7 @@ class DiagnosticController extends Controller
 
         Mail::send([],[], function ($message) use ($user,$note) {
             $message->from("info.allgfited@gmail.com", 'All Gifted Admin')
-                    ->to('math.allgifted.com')
+                    ->to('math@allgifted.com')
                     ->subject($user->name."'s report")
                     ->setBody($note, 'text/html');
         });

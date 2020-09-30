@@ -71,6 +71,44 @@ class Skill extends Model
         return $this->users()->whereUserId(Auth::user()->id)->select('skill_passed', 'skill_test_date', 'difficulty_passed');
     }
 
+    public function handleQuiz($user, $question, $correctness){
+        $userSkill= $this->users()->whereUserId($user->id)->select('noOfPasses', 'noOfTries', 'difficulty_passed','noOfFails','skill_maxile','skill_passed')->first();
+
+        if ($userSkill) {
+            $noOfTries = $userSkill->noOfTries + 1;
+            $noOfPasses = $userSkill->noOfPasses;
+            $noOfFails = $userSkill->noOfFails;
+            $difficulty_passed = $userSkill->difficulty_passed;
+            $skill_passed = $userSkill->skill_passed;
+            $skill_maxile = $userSkill->skill_maxile;
+        } else {
+            $noOfFails = $noOfPasses = $noOfTries = $difficulty_passed =$skill_passed =0;
+        }
+
+        // mark quiz
+        if ($correctness) {
+            $difficulty_passed += 1;
+            $noOfPasses += 1;
+            $difficulty_passed = $question->difficulty_id;
+        } else $noOfFails += 1;
+        // check if skill passed
+        $allskillquestions = count(\App\Question::whereSkillId($question->skill_id)->get());
+        $correctquestions = count($user->correctQuestions()->whereSkillId($question->skill_id)->get());
+        $percentage = ($correctquestions/$allskillquestions) * 100;
+        $skill_passed = $percentage > 80 ? TRUE : FALSE;
+
+        $record = [
+            'skill_test_date' => new DateTime('now'),
+            'skill_passed' => $skill_passed,
+            'noOfPasses' =>$noOfPasses,
+            'noOfFails' => $noOfFails,
+            'difficulty_passed' => $difficulty_passed,
+            'noOfTries'=> $noOfTries + 1];
+
+        $this->users()->sync([$user->id=>$record]);              //update record
+        return $skill_passed;
+    }
+
     /** 
      * Determines if difficulty passed, skill passed calculate skill maxile
      * 
