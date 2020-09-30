@@ -96,7 +96,7 @@ class SkillController extends Controller
         $newSkill->user_id = $user->id;
         $newSkill->save();
         foreach ($skill->links as $key=>$link) {
-            $new_link = \App\SkillLink::create(['skill_id'=>$new_skill->id, 'user_id'=>$user->id, 'status_id'=>4, 'link'=>$skill->link]);
+            $new_link = \App\SkillLink::create(['skill_id'=>$newSkill->id, 'user_id'=>$user->id, 'status_id'=>4, 'link'=>$link]);
         }
         $newSkill->tracks()->sync($skill->tracks->pluck('id'), FALSE);
         return response()->json(['message' => 'Skill correctly added.', 'skill'=>$newSkill,'links'=>$newSkill->links, 'tracks'=>$newSkill->tracks, 'code'=>201]);

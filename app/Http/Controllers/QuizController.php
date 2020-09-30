@@ -29,7 +29,7 @@ class QuizController extends Controller
             return response()->json(['message' => 'Only administrators can access this api', 'code' => 403], 403);
         }
 
-        return Quiz::with(['houses','questions'])->get();
+        return Quiz::with(['houses','questions','skills'])->get();
     }
 
     /**
