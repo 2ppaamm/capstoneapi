@@ -125,7 +125,7 @@ class Quiz extends Model
 
         $quizcomplete = count($questions) < 1 ?  TRUE : FALSE;
         if ($quizcomplete) {
-            $message = $this->quiz." completed successfully. For detailed reports on results, please contact us at kang@allgifted.com.";
+            $message = $diagnostic? "Congratulations! Your Diagnostic Test. ".$this->quiz." is successfully completed.  Upon your next login, you will be going into your daily quiz/practice." : "Daily quiz ".$this->quiz.'completed successfully. Join our Adaptive Math program to earn kudos and realize your math potential. For detailed reports on results, please contact us at kang@allgifted.com.';
             return $this->completeQuiz($message, $user);                
         }
                 
