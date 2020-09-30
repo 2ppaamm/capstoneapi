@@ -228,18 +228,6 @@ class DiagnosticController extends Controller
         $result = null;
         $questions_done = null;
         $note = null;
-        //tests
-        if (count($user->tests)<1) {
-            $result="No test administered";      
-        } else {
-            $diagnostic_status = !$user->tests()->first()->pivot->completed_date ? "not completed." : "completed on ".$user->tests()->first()->pivot->completed_date; 
- 
-            $note = "Dear ".$user->name.",\x0D\x0DYou first enrolled on ".$user->enrolment()->first()->start_date.". Your diagnostic test was administered on ".$user->tests()->first()->pivot->created_at." and was ".$diagnostic_status;
-            foreach ($user->tests as $test) {
-                $result = $test->pivot->completed_date ? $result. "\x0DTest: ".$test->description.'  Result:'.$test->pivot->result."%.":$result."\x0DTest:".$test->description.":  Did not complete test.";   
-            }
-
-        }
 
         if (count($user->myQuestions)<1) {
             $questions_done = "No question answered";
@@ -251,7 +239,7 @@ class DiagnosticController extends Controller
             } else {
                 $questions_done = "\x0DThese are the questions you have gotten wrong: \x0D";
                 foreach ( $incorrect_questions as $question) {
-                    $questions_done = "\x0D".$questions_done.$question->question."\x0DSkill:".$question->skill->id;                
+                    $questions_done = $questions_done.$question->question."\x0DSkill:".$question->skill->id;                
                 }
             }
             if (count($correct_questions)<1) {
@@ -282,7 +270,28 @@ class DiagnosticController extends Controller
         
         $new_maxile = $latest_test ? $user->calculateUserMaxile($latest_test) : 0;
 
-        $note = $note."\x0D\x0DYou did a total of another ".(count($user->tests)-1)." tests. Your results are: \x0D".$result.
+        //tests
+        if (count($user->tests)<1) {
+            if (!count($user->quizzes)) $note="No test/quiz administered";      
+            else {
+                $diagnostic_status = !$user->quizzes()->first()->pivot->completed_date ? "not completed." : "completed on ".$user->quizzes()->first()->pivot->completed_date; 
+                    $note = "Dear ".$user->name.",\x0D\x0DYou first enrolled on ".$user->enrolment()->first()->start_date.". Your diagnostic quiz was administered on ".$user->quizzes()->first()->pivot->created_at." and was ".$diagnostic_status;
+                    foreach ($user->quizzes as $quiz) {
+                        $result = $quiz->pivot->completed_date ? $result. "\x0DTest: ".$quiz->description.'  Result:'.$quiz->pivot->result."%.":$result."\x0DTest:".$quiz->description.":  Did not complete quiz.";   
+                    }
+            }
+        } else {
+            $diagnostic_status = !$user->tests()->first()->pivot->completed_date ? "not completed." : "completed on ".$user->tests()->first()->pivot->completed_date; 
+ 
+            $note = "Dear ".$user->name.",\x0D\x0DYou first enrolled on ".$user->enrolment()->first()->start_date.". Your diagnostic test was administered on ".$user->tests()->first()->pivot->created_at." and was ".$diagnostic_status;
+            $note = count($user->tests) > 1 ? $note."\x0D\x0DYou did a total of another ".(count($user->tests)-1)." tests" : $note;
+            foreach ($user->tests as $test) {
+                $result = $test->pivot->completed_date ? $result. "\x0DTest: ".$test->description.'  Result:'.$test->pivot->result."%.":$result."\x0DTest:".$test->description.":  Did not complete test.";   
+            }
+
+        }
+
+        $note = $note."\x0D\x0DYour results are: \x0D".$result.
 
             "\x0D\x0DIn total, you have answered ".count($user->myQuestions)." questions. Out of which you obtained ".$user->myQuestions()->sum('correct')." of them correct.".$questions_done.
             "\x0DThe skills you passed are: ".$skillpassed."\x0D\x0DThe skills you attempted and did not pass are:".$skillfailed.
