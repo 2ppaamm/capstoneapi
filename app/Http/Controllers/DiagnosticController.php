@@ -247,7 +247,7 @@ class DiagnosticController extends Controller
             } else {
                 $questions_done = $questions_done."\x0DThese are the questions you have gotten correct: \x0D";
                 foreach ( $correct_questions as $question) {
-                    $questions_done = $questions_done."\x0D".$question->question."\x09Skill:".$question->skill->id."\x0D";                
+                    $questions_done = $questions_done."\x0D".$question->id."\x09".$question->question."\x09Skill:".$question->skill->id."\x0D";                
                 }
             }
         }
@@ -283,7 +283,7 @@ class DiagnosticController extends Controller
         } else {
             $diagnostic_status = !$user->tests()->first()->pivot->completed_date ? "not completed." : "completed on ".$user->tests()->first()->pivot->completed_date; 
  
-            $note = "Dear ".$user->name.",\x0D\x0DYou first enrolled on ".$user->enrolment()->first()->start_date.". Your diagnostic test was administered on ".$user->tests()->first()->pivot->created_at." and was ".$diagnostic_status;
+            $note = "Dear ".$user->name.",\x0D\x0DYou first enrolled on ".$user->enrolment()->first()->start_date.". Your diagnostic test was administered on ".$user->tests()->first()->pivot->created_at." and was ".$diagnostic_status.".";
             $note = count($user->tests) > 1 ? $note."\x0D\x0DYou did a total of another ".(count($user->tests)-1)." tests" : $note;
             foreach ($user->tests as $test) {
                 $result = $test->pivot->completed_date ? $result. "\x0DTest: ".$test->description.'  Result:'.$test->pivot->result."%.":$result."\x0DTest:".$test->description.":  Did not complete test.";   
@@ -299,7 +299,7 @@ class DiagnosticController extends Controller
 
         Mail::send([],[], function ($message) use ($user,$note) {
             $message->from("info.allgfited@gmail.com", 'All Gifted Admin')
-                    ->to('math@allgifted.com')
+                    ->to('math@allgifted.com','jo@allgifted.com', 'kang@allgifted.com')
                     ->subject($user->name."'s report")
                     ->setBody($note, 'text/html');
         });
