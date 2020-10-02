@@ -69,7 +69,8 @@ class EnrolmentController extends Controller
 
         Mail::send([],[], function ($message) use ($user,$note) {
             $message->from('info.allgifted@gmail.com', 'All Gifted Admin')
-                    ->to($user->email)->cc('kang@allgifted.com')
+                    ->to($user->email)->cc('kang
+                        @allgifted.com')
                     ->subject('Thank you for registration')
                     ->setBody($note, 'text/html');
         });
