@@ -38,7 +38,7 @@ class QuizHouseController extends Controller
                 response()->json(['message'=>'Error in house chosen'], 401);
             } 
         }
-        return response()->json(['message' => 'House(s) correctly added', 'house'=>$house, 'code'=>201]);
+        return response()->json(['message' => 'House(s) correctly added', 'quiz'=>$quiz, 'code'=>201]);
     }
 
     /**
@@ -97,12 +97,12 @@ class QuizHouseController extends Controller
             return response()->json(['message' => 'This house does not exist for this quiz', 'code'=>404], 404);
         }
         $quiz->houses()->detach($house->id);
-        return response()->json(['message'=>'House has been removed from this quiz.', 'houses'=>$quiz->houses()->with('user')->get(), 'code'=>201], 201);
+        return response()->json(['message'=>'House has been removed from this quiz.', 'houses'=>$quiz->houses, 'code'=>201], 201);
     }
 
     public function deleteHouses(Quiz $quiz){
         $quiz->houses()->detach();
         return response()->json(['message'=>'All houses are deleted','quiz'=>$quiz, 'code'=>201],201);
     }
-    
+
 }
