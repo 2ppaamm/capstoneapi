@@ -17,6 +17,8 @@ Route::post('/quizzes/{quiz}/copy', 'QuizController@copy');
 Route::get('/quizzes/create', 'QuizController@create');
 Route::resource('quizzes.houses', 'QuizHouseController');
 Route::delete('quizzes/{quiz}/houses','QuizHouseController@deleteHouses');
+Route::resource('quizzes.skills', 'QuizSkillController');
+Route::delete('quizzes/{quiz}/skills','QuizSkillController@deleteSkills');
 
 Route::resource('/', 'DashboardController');
 

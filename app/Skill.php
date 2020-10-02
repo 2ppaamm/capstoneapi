@@ -31,6 +31,10 @@ class Skill extends Model
         return $this->belongsToMany(Test::class)->withTimestamps();
     }
 
+    public function quizzes() {
+        return $this->belongsToMany(Quiz::class)->withTimestamps();
+    }
+
     public function status() {
         return $this->belongsTo(Status::class);
     }
