@@ -72,8 +72,6 @@ class Quiz extends Model
     public function houses()
     {
         return $this->belongsToMany(House::class)->withTimestamps();
-//        return $this->hasMany(HouseQuiz::class, 'house_quiz')->withTimestamps();
-//        return $this->hasMany(HouseQuiz::class);
     }
 
     public function fieldQuestions($user, $house){
