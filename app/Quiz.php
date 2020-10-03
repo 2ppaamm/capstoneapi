@@ -86,13 +86,14 @@ class Quiz extends Model
             if (!$this->diagnostic) {
                 if (count($current_house->current_track)>0){
                     $current_track_questions =  Question::whereIn('skill_id', Skill_Track::whereTrackId($current_house->current_track()->pluck('id'))->pluck('skill_id'))->get();
+                    $untaught_tracks = $current_house->tracks->diff($current_house->current_track);
                     $questions = $current_track_questions->diff($user->correctQuestions);
                 }
 
                 if (count($questions)<10) {
                     if (count($current_house->taught_tracks)>0){
                         $taught_tracks_questions = Question::whereIn('skill_id', Skill_Track::whereTrackId($current_house->taught_tracks()->pluck('id'))->pluck('skill_id'))->get();
-                        $untaught_tracks = $untaught_tracks->diff($current_house->current_track)->pluck('id');
+                        $untaught_tracks = $untaught_tracks->diff($current_house->taught_tracks)->pluck('id');
                         $questions = count($taught_tracks_questions) > 0 ? $questions->merge($taught_tracks_questions)->diff($user->correctQuestions) : $questions;
                     }
                 }
@@ -101,13 +102,14 @@ class Quiz extends Model
                     $untaught_tracks_questions = Question::whereIn('skill_id', Skill_Track::whereIn('track_id',$untaught_tracks)->pluck('skill_id'))->get();
                     $questions = (count($untaught_tracks_questions) > 0) ? $questions->merge($untaught_tracks_questions)->diff($user->correctQuestions):$questions;
                 }
+
                 if (count($questions)<10) {
                     $all_tracks_questions = Question::whereIn('skill_id', Skill_Track::whereIn('track_id',$current_house->tracks()->pluck('id'))->pluck('skill_id'))->get()->take(10-count($questions));
                     $questions = (count($all_tracks_questions)>0) ? $questions->merge($all_tracks_questions) : $questions;
                 }
                 $questions = count($questions) < 10 ? $questions->merge(Question::all()->random(10-count($questions))) : $questions->take(10);
 
-            } else $questions = \App\Question::whereIn('skill_id',$current_house->skills()->pluck('id'))->get();
+            } else $questions = \App\Question::whereIn('skill_id',$current_house->skills()->pluck('id'))->whereSource('diagnostic')->get();
 
             foreach ($questions as $question) {
                 $question->assignQuiz($user,$this, $current_house);
