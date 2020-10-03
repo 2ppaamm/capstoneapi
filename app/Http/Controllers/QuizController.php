@@ -29,7 +29,7 @@ class QuizController extends Controller
             return response()->json(['message' => 'Only administrators can access this api', 'code' => 403], 403);
         }
 
-        return Quiz::with(['houses','questions','skills'])->get();
+        return Quiz::with(['houses','skills'])->get();
     }
 
     /**
@@ -71,7 +71,7 @@ class QuizController extends Controller
             }
         }
 
-        return $quiz->with('questions','houses')->get();
+        return $quiz->with('skills','houses')->get();
     }
 
     /**
@@ -100,79 +100,11 @@ class QuizController extends Controller
             return response()->json(['message' => 'You have no access rights to update skill', 'code' => 401], 401);
         }
 
-        if ($request->exists('add_skills')) {
-            $quiz->skills()->sync($request->add_skills, false);
-            foreach ($request->get('add_skills') as $skill) {
-
-                // store question in question_quiz table
-                $questionId = Question::where('skill_id', $skill)->value('id');
-                if (!$questionId) {
-                    continue;
-                }
-                $quiz->questions()->sync([$questionId], false);
-            }
-        }
-
-        if ($request->exists('remove_skills')) {
-            foreach ($request->get('remove_skills') as $skill) {
-
-                $skillId = $skill['skill_id'];
-                QuizSkill::where(['quiz_id' => $quiz->id, 'skill_id' => $skillId])->delete();
-
-                $questionId = Question::where('skill_id', $skillId)->value('id');
-                if (!$questionId) {
-                    continue;
-                }
-                QuestionQuiz::where(['quiz_id' => $quiz->id, 'question_id' => $questionId])->delete();
-            }
-        }
-
-
-        if ($request->exists('add_houses')) {
-            foreach ($request->get('add_houses') as $house) {
-                $houseId = $house['house_id'];
-                if (!House::where('id', $houseId)->count()) {
-                    continue;
-                }
-
-                if (HouseQuiz::where(['quiz_id' => $quiz->id, 'house_id' => $houseId])->count()) {
-                    continue;
-                }
-                HouseQuiz::create(array_merge(['quiz_id' => $quiz->id], $house));
-            }
-        }
-
-        if ($request->exists('remove_houses')) {
-            foreach ($request->get('remove_houses') as $house) {
-                $houseId = $house['house_id'];
-                HouseQuiz::where(['quiz_id' => $quiz->id, 'house_id' => $houseId])->delete();
-            }
-        }
-
-        if ($request->exists('add_questions')) {
-            foreach ($request->get('add_questions') as $question) {
-                $questionId = $question['question_id'];
-
-                if (!Question::where('id', $questionId)->count()) {
-                    continue;
-                }
-                if (QuestionQuiz::where(['quiz_id' => $quiz->id, 'question_id' => $questionId])->count()) {
-                    continue;
-                }
-                QuestionQuiz::create(array_merge(['quiz_id' => $quiz->id], $question));
-            }
-        }
-
-        if ($request->exists('remove_questions')) {
-            foreach ($request->get('remove_questions') as $question) {
-                $questionId = $question['question_id'];
-                QuestionQuiz::where(['quiz_id' => $quiz->id, 'question_id' => $questionId])->delete();
-            }
-        }
-
         $quiz->fill($request->except(['houses', 'skills']))->save();
+        $quiz->skills()->sync($request->skills, true);
+        $quiz->houses()->sync($request->houses, true);
 
-        return $quiz;
+        return response()->json(['message'=>'Quiz updated','quiz' => $quiz, 'code'=>201], 201);
     }
 
     /**
