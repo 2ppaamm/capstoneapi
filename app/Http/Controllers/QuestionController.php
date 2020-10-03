@@ -205,7 +205,7 @@ class QuestionController extends Controller
             $question['answer3'] = !$request->answer3 || $request->answer3 == 'null'? NULL: (int)$request->answer3;
         }
 
-        $question->fill($request->except(['question_image','answer0_image','answer1_image','answer2_image','answer3_image', 'answer0', 'answer1', 'answer2', 'answer3']))->save();
+        $question->fill($request->except(['question_image','answer0_image','answer1_image','answer2_image','answer3_image']))->save();
 
         return response()->json(['message'=>'Question has been updated','question' => $question, 'code'=>200], 200);
     }
