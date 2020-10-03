@@ -59,10 +59,11 @@ class DiagnosticController extends Controller
             //    else create a new personal quiz
 
              if ($diagnostic){
-                if ($house->valid_quizzes) {
+                if (count($house->valid_quizzes)) {
                     if (count($house->incomplete_housequiz($user))){
                        $quiz = $house->incomplete_housequiz($user)->last(); 
-                    } else { 
+                    }
+                else { 
                        $quiz = $house->valid_quizzes->diff($user->quizzes)->last(); 
                     }
                 }

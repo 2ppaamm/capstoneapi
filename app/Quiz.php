@@ -77,7 +77,8 @@ class Quiz extends Model
     public function fieldQuestions($user, $house){
         $questions = collect([]);
         $current_house = $house;
-        $untaught_tracks = collect([]);        
+        $untaught_tracks = collect([]);      
+
         if ($user->quizzes()->where('quiz_id',$this->id)->first()->pivot->quiz_completed){
             return response()->json(['message'=>'Quiz has completed', "code"=>500], 500);
         }
