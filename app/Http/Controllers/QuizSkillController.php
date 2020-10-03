@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use \App\Quiz;
 use \App\Skill;
+use \App\Question;
 
 class QuizSkillController extends Controller
 {
@@ -108,9 +109,10 @@ class QuizSkillController extends Controller
         return response()->json(['message'=>'All skills are deleted','quiz'=>$quiz, 'code'=>201],201);
     }
 
-    public function deleteQuizzes(Skill $skill){
-        $skill->quizzes()->detach();
-        return response()->json(['message'=>'All quizzes are deleted','skill'=>$skill, 'code'=>201],201);
+    public function generateQuiz(Quiz $quiz){
+        $questions = Question::whereIn('skill_id',$quiz->skills()->pluck('id'))->whereSource('diagnostic')->pluck('id');
+        $quiz->questions()->sync($questions, FALSE);
+        return response()->json(['message'=>'All question in the skills are generated in quiz','quiz'=>$quiz->with('questions')->get(), 'code'=>201],201);
     }
 
 }

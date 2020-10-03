@@ -83,8 +83,10 @@ class Quiz extends Model
 
         if (count($this->questions)<1) {
             if (!$this->diagnostic) {
-                $current_track_questions =  Question::whereIn('skill_id', Skill_Track::whereTrackId($current_house->current_track()->pluck('id'))->pluck('skill_id'))->get();
+                if (count($current_house->current_track)>0){
+return                    $current_track_questions =  Question::whereIn('skill_id', Skill_Track::whereTrackId($current_house->current_track()->pluck('id'))->pluck('skill_id'))->get();
                     $questions = $current_track_questions->diff($user->correctQuestions);
+                }
 
                 if (count($questions)<10) {
                     if (count($current_house->taught_tracks)>0){

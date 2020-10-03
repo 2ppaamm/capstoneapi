@@ -19,6 +19,7 @@ Route::resource('quizzes.houses', 'QuizHouseController');
 Route::delete('quizzes/{quiz}/houses','QuizHouseController@deleteHouses');
 Route::resource('quizzes.skills', 'QuizSkillController');
 Route::delete('quizzes/{quiz}/skills','QuizSkillController@deleteSkills');
+Route::post('/quizzes/{quiz}/generate', 'QuizSkillController@generateQuiz');
 
 Route::resource('/', 'DashboardController');
 
