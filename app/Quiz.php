@@ -76,7 +76,8 @@ class Quiz extends Model
 
     public function fieldQuestions($user, $house){
         $questions = collect([]);
-        $current_house = $house;        
+        $current_house = $house;
+        $untaught_tracks = collect([]);        
         if ($user->quizzes()->where('quiz_id',$this->id)->first()->pivot->quiz_completed){
             return response()->json(['message'=>'Quiz has completed', "code"=>500], 500);
         }
@@ -91,12 +92,12 @@ class Quiz extends Model
                 if (count($questions)<10) {
                     if (count($current_house->taught_tracks)>0){
                         $taught_tracks_questions = Question::whereIn('skill_id', Skill_Track::whereTrackId($current_house->taught_tracks()->pluck('id'))->pluck('skill_id'))->get();
-                        $questions = $taught_tracks_questions ? $questions->merge($taught_tracks_questions)->diff($user->correctQuestions) : $questions;
+                        $untaught_tracks = $untaught_tracks->diff($current_house->current_track)->pluck('id');
+                        $questions = count($taught_tracks_questions) > 0 ? $questions->merge($taught_tracks_questions)->diff($user->correctQuestions) : $questions;
                     }
                 }
 
                 if (count($questions)<10){
-                    $untaught_tracks = $current_house->tracks->diff($current_house->taught_tracks)->diff($current_house->current_track)->pluck('id');
                     $untaught_tracks_questions = Question::whereIn('skill_id', Skill_Track::whereIn('track_id',$untaught_tracks)->pluck('skill_id'))->get();
                     $questions = (count($untaught_tracks_questions) > 0) ? $questions->merge($untaught_tracks_questions)->diff($user->correctQuestions):$questions;
                 }
