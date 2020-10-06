@@ -4,6 +4,7 @@ namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 use DateTime;
+use Illuminate\Support\Facades\Mail;
 
 class Quiz extends Model
 {
@@ -108,6 +109,7 @@ class Quiz extends Model
                     $all_tracks_questions = Question::whereIn('skill_id', Skill_Track::whereIn('track_id',$current_house->tracks()->pluck('id'))->pluck('skill_id'))->get()->take(10-count($questions));
                     $questions = (count($all_tracks_questions)>0) ? $questions->merge($all_tracks_questions) : $questions;
                 }
+            
                 $questions = count($questions) < 10 ? $questions->merge(Question::all()->random(10-count($questions))) : $questions->take(10);
 
             } else $questions = \App\Question::whereIn('skill_id',$current_house->skills()->pluck('id'))->whereSource('diagnostic')->get();
