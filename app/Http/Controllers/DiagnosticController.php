@@ -291,10 +291,9 @@ class DiagnosticController extends Controller
             }
 
         }
-
         $note = $note."\x0D\x0DYour results are: \x0D".$result.
 
-            "\x0D\x0DIn total, you have answered ".count($user->myQuestions)." questions. Out of which you obtained ".$user->myQuestions()->sum('correct')." of them correct.".$questions_done.
+            "\x0D\x0DIn total, you have answered ".count($user->answeredQuestion)." questions. Out of which you obtained ".$user->myQuestions()->sum('correct')." of them correct.".$questions_done.
             "\x0DThe skills you passed are: ".$skillpassed."\x0D\x0DThe skills you attempted and did not pass are:".$skillfailed.
             "\x0D\x0DAs such, your maxile level is now at ".$user->maxile_level.".";
 
