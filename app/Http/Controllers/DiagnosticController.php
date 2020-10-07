@@ -230,11 +230,11 @@ class DiagnosticController extends Controller
         $questions_done = null;
         $note = null;
 
-        if (count($user->myQuestions)<1) {
+        if (count($user->answeredQuestion)<1) {
             $questions_done = "No question answered";
         } else {
             $correct_questions = $user->myQuestions()->whereCorrect(TRUE)->get();
-            $incorrect_questions = $user->myQuestions()->whereCorrect(FALSE)->get();
+            $incorrect_questions = $user->myQuestions()->whereCorrect(FALSE)->whereQuestionAnswered(TRUE)->get();
             if (count($incorrect_questions)<1) {
                 $questions_done = "You didn't answer any question wrongly.";
             } else {
