@@ -86,6 +86,7 @@ class QuestionController extends Controller
         $user = Auth::user();
         $question = $request->except(['question_image','answer0_image','answer1_image','answer2_image','answer3_image']);
         $question['user_id'] = $user->id;
+        $image_path = '/images/questions/question_image';
 
         if ($request->type_id == 2) {
             $question['answer0'] = $request->answer0 == 'null'? NULL: (int)$request->answer0;
@@ -96,7 +97,6 @@ class QuestionController extends Controller
 
         if ($request->question_image) {
             $q_image='q'.time().'.png';
-            $image_path = 'images/questions/question_image';
             $file = $request->question_image->move(public_path().$image_path, $q_image);
             $question['question_image'] = '/images/questions/question_image/'.$q_image;
 
