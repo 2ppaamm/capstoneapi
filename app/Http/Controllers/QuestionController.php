@@ -95,7 +95,7 @@ class QuestionController extends Controller
         }
 
         if ($request->question_image) {
-return            $q_image='q'.time().'.png';
+            $q_image='q'.time().'.png';
             $file = $request->question_image->move(public_path('images/questions/question_image'), $q_image);
             $question['question_image'] = '/images/questions/question_image/'.$q_image;
 
