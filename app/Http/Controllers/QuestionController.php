@@ -97,33 +97,33 @@ class QuestionController extends Controller
         if ($request->hasFile('question_image')) {
             $q_image='q'.time().'.png';
             $file = $request->question_image->move(public_path('images/questions/question_image'), $q_image);
-            $question['question_image'] = 'images/questions/question_image/'.$q_image;
+            $question['question_image'] = '/images/questions/question_image/'.$q_image;
 
         } 
 
         if ($request->hasFile('answer0_image')) {
             $a0_image='a0'.time().'.png';
             $file = $request->answer0_image->move(public_path('images/questions/answers'), $a0_image);            
-            $question['answer0_image'] = 'images/questions/answers'.$a0_image;
+            $question['answer0_image'] = '/images/questions/answers'.$a0_image;
         }
 
         if ($request->hasFile('answer1_image')) {
             $a1_image='a1'.time().'.png';
             $file = $request->answer1_image->move(public_path('images/questions/answers'), $a1_image);            
-            $question['answer1_image'] = 'images/questions/answers'.$a1_image;
+            $question['answer1_image'] = '/images/questions/answers'.$a1_image;
         }
         if ($request->hasFile('answer2_image')) {
             $a2_image='a2'.time().'.png';
             $file = $request->answer2_image->move(public_path('images/questions/answers'), $a2_image);            
-            $question['answer2_image'] = 'images/questions/answers'.$a2_image;
+            $question['answer2_image'] = '/images/questions/answers'.$a2_image;
         }
         if ($request->hasFile('answer3_image')) {
             $a3_image='a3'.time().'.png';
             $file = $request->answer3_image->move(public_path('images/questions/answers'), $a3_image);            
-            $question['answer3_image'] = 'images/questions/answers'.$a3_image;
+            $question['answer3_image'] = '/images/questions/answers'.$a3_image;
         }
 
-        $question = Question::firstOrNew($question);
+        $question = Question::create($question);
         return response()->json(['message' => 'Question correctly added', 'question'=>$question, 'code'=>201]);
     }
 
