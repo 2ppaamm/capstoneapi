@@ -82,10 +82,7 @@ class QuestionController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function store(Request $request)
-    {
- 
-
-
+    { 
         $user = Auth::user();
         $question = $request->except(['question_image','answer0_image','answer1_image','answer2_image','answer3_image']);
         $question['user_id'] = $user->id;
@@ -99,8 +96,8 @@ class QuestionController extends Controller
 
         if ($request->hasFile('question_image')) {
             $q_image='q'.time().'.png';
-            $file = $request->question_image->move(public_path('images\questions\question_image'), $q_image);
-            $question['image'] = 'images/questions/question_image/'.$q_image;
+            $file = $request->question_image->move(public_path('images/questions/question_image'), $q_image);
+            $question['question_image'] = 'images/questions/question_image/'.$q_image;
 
         } 
 
@@ -126,7 +123,7 @@ class QuestionController extends Controller
             $question['answer3_image'] = 'images/questions/answers'.$a3_image;
         }
 
-        $question = Question::create($question);
+        $question = Question::firstOrNew($question);
         return response()->json(['message' => 'Question correctly added', 'question'=>$question, 'code'=>201]);
     }
 
