@@ -122,7 +122,6 @@ class QuestionController extends Controller
             $file = $request->answer3_image->move(public_path('images/questions/answers'), $a3_image);            
             $question['answer3_image'] = '/images/questions/answers'.$a3_image;
         }
-
         $question = Question::create($question);
         return response()->json(['message' => 'Question correctly added', 'question'=>$question, 'code'=>201]);
     }
