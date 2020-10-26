@@ -95,7 +95,7 @@ class QuestionController extends Controller
         }
 
         if ($request->hasFile('question_image')) {
-            $q_image='q'.time().'.png';
+return            $q_image='q'.time().'.png';
             $file = $request->question_image->move(public_path('images/questions/question_image'), $q_image);
             $question['question_image'] = '/images/questions/question_image/'.$q_image;
 
@@ -122,7 +122,7 @@ class QuestionController extends Controller
             $file = $request->answer3_image->move(public_path('images/questions/answers'), $a3_image);            
             $question['answer3_image'] = '/images/questions/answers'.$a3_image;
         }
-return        $question = Question::create($question);
+        $question = Question::create($question);
         return response()->json(['message' => 'Question correctly added', 'question'=>$question, 'code'=>201]);
     }
 
