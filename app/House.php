@@ -102,7 +102,7 @@ class House extends Model
     }
 
     public function current_track(){
-        return $this->tracks();//->withPivot('track_order','start_date', 'end_date')->wherePivot('start_date','<=',new DateTime('today'))->wherePivot('end_date','>=',new DateTime('today'));
+        return $this->tracks()->withPivot('track_order','start_date', 'end_date')->wherePivot('start_date','<=',new DateTime('today'))->wherePivot('end_date','>=',new DateTime('today'));
     }
 
     public function taught_tracks(){
