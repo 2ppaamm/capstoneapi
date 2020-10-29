@@ -98,8 +98,13 @@ class SkillController extends Controller
         foreach ($skill->links as $key=>$link) {
             $new_link = \App\SkillLink::create(['skill_id'=>$newSkill->id, 'user_id'=>$user->id, 'status_id'=>4, 'link'=>$link]);
         }
+        foreach ($skill->questions as $key=>$question){
+            $new_question = $question;
+            $new_question['skill_id'] = $newSkill->id;
+            $new_question = \App\Question::create($new_question->toArray());
+        }
         $newSkill->tracks()->sync($skill->tracks->pluck('id'), FALSE);
-        return response()->json(['message' => 'Skill correctly added.', 'skill'=>$newSkill,'links'=>$newSkill->links, 'tracks'=>$newSkill->tracks, 'code'=>201]);
+        return response()->json(['message' => 'Skill correctly added.', 'skill'=>$newSkill,'links'=>$newSkill->links, 'tracks'=>$newSkill->tracks, 'questions'=>$newSkill->questions, 'code'=>201]);
 
     }
 
