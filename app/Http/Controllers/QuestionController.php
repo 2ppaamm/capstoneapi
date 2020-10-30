@@ -95,11 +95,10 @@ class QuestionController extends Controller
             $question['answer3'] = $request->answer3 == 'null'? NULL: (int)$request->answer3;
         }
 
-        if ($request->question_image) {
+        if ($request->hasFile('question_image')) {
             $q_image='q'.time().'.png';
             $file = $request->question_image->move(public_path().$image_path, $q_image);
             $question['question_image'] = '/images/questions/question_image/'.$q_image;
-
         } 
 
         if ($request->hasFile('answer0_image')) {
