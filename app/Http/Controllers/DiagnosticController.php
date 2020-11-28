@@ -278,7 +278,13 @@ class DiagnosticController extends Controller
                 $diagnostic_status = !$user->quizzes()->first()->pivot->completed_date ? "not completed." : "completed on ".$user->quizzes()->first()->pivot->completed_date; 
                     $note = "Dear ".$user->name.",\x0D\x0DYou first enrolled on ".$user->enrolment()->first()->start_date.". Your diagnostic quiz was administered on ".$user->quizzes()->first()->pivot->created_at." and was ".$diagnostic_status;
                     foreach ($user->quizzes as $quiz) {
-                        $result = $quiz->pivot->completed_date ? $result. "\x0DTest: ".$quiz->description.'  Result:'.$quiz->pivot->result."%.":$result."\x0DTest:".$quiz->description.":  Did not complete quiz.";   
+                        $result = $quiz->pivot->completed_date ? $result. "\x0DQuiz: ".$quiz->description.' (Diagnostic: '.$quiz->diagnostic.')  Result:'.$quiz->pivot->result."%.":$result."\x0DTest:".$quiz->description.":  Did not complete quiz.";
+                        foreach ($quiz->skills as $quizskill){
+                            $total_attempted = \App\QuestionQuizUser::whereUserId($user->id)->whereQuizId($quiz->id)->whereIn('question_id',\App\Question::whereSkillId($quizskill->id)->pluck('id'))->count();
+                            $total_correct = \App\QuestionQuizUser::whereUserId($user->id)->whereQuizId($quiz->id)->whereIn('question_id',\App\Question::whereSkillId($quizskill->id)->pluck('id'))->whereCorrect(TRUE)->count();
+                            $percent = $total_attempted ? $total_correct/$total_attempted *100 : 0;
+                            $result = $result."\x0DSkill: ".$quizskill->description. 'Percentage: '.round($percent,2).'%';
+                        }
                     }
             }
         } else {
@@ -296,7 +302,6 @@ class DiagnosticController extends Controller
             "\x0D\x0DIn total, you have answered ".count($user->answeredQuestion)." questions. Out of which you obtained ".$user->myQuestions()->sum('correct')." of them correct.".$questions_done.
             "\x0DThe skills you passed are: ".$skillpassed."\x0D\x0DThe skills you attempted and did not pass are:".$skillfailed.
             "\x0D\x0DAs such, your maxile level is now at ".$user->maxile_level.".";
-
         Mail::send([],[], function ($message) use ($user,$note) {
             $message->from("info.allgfited@gmail.com", 'All Gifted Admin')
                     ->to('math@allgifted.com','jo@allgifted.com', 'kang@allgifted.com')
