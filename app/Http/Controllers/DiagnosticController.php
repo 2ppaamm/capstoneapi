@@ -283,7 +283,7 @@ class DiagnosticController extends Controller
                             $total_attempted = \App\QuestionQuizUser::whereUserId($user->id)->whereQuizId($quiz->id)->whereIn('question_id',\App\Question::whereSkillId($quizskill->id)->pluck('id'))->count();
                             $total_correct = \App\QuestionQuizUser::whereUserId($user->id)->whereQuizId($quiz->id)->whereIn('question_id',\App\Question::whereSkillId($quizskill->id)->pluck('id'))->whereCorrect(TRUE)->count();
                             $percent = $total_attempted ? $total_correct/$total_attempted *100 : 0;
-                            $result = $result."\x0DSkill: ".$quizskill->description. ' | Achievement: '.round($percent,2).'%';
+                            $result = $result."\x0DSkill: ".$quizskill->description. ' | Questions Attempted: '.$total_attempted. ' | Questions correct: '.$total_correct. ' | Achievement: '.round($percent,2).'%';
                         }
                     }
             }
