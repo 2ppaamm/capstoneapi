@@ -279,11 +279,14 @@ class DiagnosticController extends Controller
                     $note = "Dear ".$user->name.",\x0D\x0DYou first enrolled on ".$user->enrolment()->first()->start_date.". Your diagnostic quiz was administered on ".$user->quizzes()->first()->pivot->created_at." and was ".$diagnostic_status;
                     foreach ($user->quizzes as $quiz) {
                         $result = $quiz->pivot->completed_date ? $result. "\x0DQuiz: ".$quiz->description.' (Diagnostic: '.$quiz->diagnostic.')  Result:'.$quiz->pivot->result."%.":$result."\x0DTest:".$quiz->description.":  Did not complete quiz.";
-                        foreach ($quiz->skills as $quizskill){
-                            $total_attempted = \App\QuestionQuizUser::whereUserId($user->id)->whereQuizId($quiz->id)->whereIn('question_id',\App\Question::whereSkillId($quizskill->id)->pluck('id'))->count();
-                            $total_correct = \App\QuestionQuizUser::whereUserId($user->id)->whereQuizId($quiz->id)->whereIn('question_id',\App\Question::whereSkillId($quizskill->id)->pluck('id'))->whereCorrect(TRUE)->count();
-                            $percent = $total_attempted ? $total_correct/$total_attempted *100 : 0;
-                            $result = $result."\x0DSkill: ".$quizskill->description. 'Percentage: '.round($percent,2).'%';
+                        if ($quiz->diagnostic){
+                            foreach ($quiz->skills as $quizskill){
+                                $total_attempted = \App\QuestionQuizUser::whereUserId($user->id)->whereQuizId($quiz->id)->whereIn('question_id',\App\Question::whereSkillId($quizskill->id)->pluck('id'))->count();
+                                $total_correct = \App\QuestionQuizUser::whereUserId($user->id)->whereQuizId($quiz->id)->whereIn('question_id',\App\Question::whereSkillId($quizskill->id)->pluck('id'))->whereCorrect(TRUE)->count();
+                                $percent = $total_attempted ? $total_correct/$total_attempted *100 : 0;
+                                $result = $result."\x0D\x0DSkill: ".$quizskill->description. ' Achievement: '.round($percent,2).'%';
+                            }
+
                         }
                     }
             }
