@@ -302,12 +302,12 @@ class DiagnosticController extends Controller
             "\x0D\x0DIn total, you have answered ".count($user->answeredQuestion)." questions. Out of which you obtained ".$user->myQuestions()->sum('correct')." of them correct.".$questions_done.
             "\x0DThe skills you passed are: ".$skillpassed."\x0D\x0DThe skills you attempted and did not pass are:".$skillfailed.
             "\x0D\x0DAs such, your maxile level is now at ".$user->maxile_level.".";
-        Mail::send([],[], function ($message) use ($user,$note) {
-            $message->from("info.allgfited@gmail.com", 'All Gifted Admin')
-                    ->to('math@allgifted.com','jo@allgifted.com', 'kang@allgifted.com')
-                    ->subject($user->name."'s report")
-                    ->setBody($note, 'text/html');
-        });
+//        Mail::send([],[], function ($message) use ($user,$note) {
+  //          $message->from("info.allgfited@gmail.com", 'All Gifted Admin')
+   //                 ->to('math@allgifted.com','jo@allgifted.com', 'kang@allgifted.com')
+  //                 ->subject($user->name."'s report")
+   //                 ->setBody($note, 'text/html');
+    //    });
 
         return response()->json(['message' => $note, 'code'=>201], 201);                        
     }
