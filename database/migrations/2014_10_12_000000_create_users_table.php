@@ -28,7 +28,7 @@ class CreateUsersTable extends Migration
             $table->dateTime('last_test_date')->nullable();
             $table->dateTime('next_test_date')->nullable();
             $table->string('image')->nullable();
-            $table->boolean('diagnostic')->default(TRUE);
+            $table->boolean('diagnostic')->default(FALSE);
             $table->timestamps();
         });
     }
