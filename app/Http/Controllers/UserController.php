@@ -97,7 +97,7 @@ class UserController extends Controller
             return response()->json(['message' => 'You have no access rights to set user to do diagnostic','code'=>401], 401);
         }
         $user = User::findorfail($id);
-        $user->diagnostic = $user->diagnostic ? TRUE: FALSE;
+        $user->diagnostic = $user->diagnostic ? FALSE: TRUE;
         $user->save();
         return response()->json(['message' => 'Set Diagnostic for '.$user->name.' is done.', 'data' => $user, 'code' => 200]);
     }
