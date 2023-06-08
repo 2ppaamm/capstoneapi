@@ -39,8 +39,8 @@ return [
     |
     */
     'frontendDir' => 'c:\Users\Pamela Lim\capstonefin\src\\',
-    'url' => 'mathapi.pamelalim.me',
-//    'url' => 'localhost:8000',
+//    'url' => 'mathapi.pamelalim.me',
+    'url' => 'localhost:8000',
     'difficulty_levels' =>3,
     'number_to_pass' => 3,
     'number_to_fail' =>2,
