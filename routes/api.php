@@ -73,6 +73,3 @@ Route::get('logs', 'LogController@index');
 Route::post('/test/protected', 'DiagnosticController@index');
 Route::post('test/mastercode', 'DiagnosticController@store');
 Route::post('/test/answers', 'DiagnosticController@answer');
-
-
-
