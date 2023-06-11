@@ -87,14 +87,15 @@ class CourseController extends Controller
      */
     public function show(Course $course)
     {
-         $course = Course::with(['tracks'=> function ($query){  
+        $course = Course::with(['status', 'tracks.skills','validHouses'])->find($course->id);
+ /*        $course = Course::with(['tracks'=> function ($query){  
             $query -> with('unit')
                 ->select('description','id','track','level_id')->with('level')
                 ->with(['skills' => function ($query) {
                   $query->select('track_id','skill')->orderBy('skill_order');}])
                 ->orderBy('track_order'); 
             }])->find($course->id);
-
+*/
         if (!$course) {
             return response()->json(['message' => 'This course does not exist', 'code'=>404], 404);
         }
