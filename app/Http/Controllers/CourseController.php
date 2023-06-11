@@ -99,7 +99,7 @@ class CourseController extends Controller
         if (!$course) {
             return response()->json(['message' => 'This course does not exist', 'code'=>404], 404);
         }
-        return response()->json(['course'=>$course, 'code'=>201], 201);
+        return response()->json(['course'=>$course, 'statuses'=>\App\Status::select('id','status','description')->get(),'code'=>201], 201);
     }
 
 
