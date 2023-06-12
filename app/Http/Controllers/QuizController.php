@@ -26,10 +26,10 @@ class QuizController extends Controller
         $user = Auth::user();
 
         if (!$user->is_admin) {
-            return response()->json(['message' => 'Only administrators can access this api', 'code' => 403], 403);
+            return response()->json(['message' => 'Only administrators can access this information', 'code' => 403], 403);
         }
 
-        return Quiz::with(['houses','skills'])->get();
+        return Quiz::with(['houses','skills', 'questions', 'user','quizzees'])->get();
     }
 
     /**
