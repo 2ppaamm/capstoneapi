@@ -23,7 +23,7 @@ class CourseController extends Controller
      */
     public function index()
     {
-        return $courses = Course::with('tracks.skills','houses.created_by','status')->get();
+        return $courses = Course::with('tracks.skills','houses.created_by','status','houses')->get();
         return response()-> json(['message' => 'Request executed successfully', 'courses'=>$courses],200);
     }
     /**
