@@ -89,6 +89,10 @@ class House extends Model
         return $this->belongsToMany(Test::class)->withTimestamps();
     }
 
+    public function valid_tests() {
+        return $this->tests()->where('start_available_time', '<=', new DateTime('today'))->where('end_available_time','>=', new DateTime('today'));
+    }
+
     public function quizzes(){
         return $this->belongsToMany(Quiz::class)->withPivot('start_date','end_date','result','attempts','which_attempt')->withTimestamps();
     }
@@ -99,6 +103,10 @@ class House extends Model
 
     public function incomplete_housequiz($user){
         return $user->quizzes()->whereIn('quiz_id',$this->valid_quizzes()->pluck('id'))->whereQuizCompleted(FALSE)->get();
+    }
+
+    public function incomplete_housetest($user){
+        return $user->tests()->whereIn('test_id',$this->valid_tests()->pluck('id'))->whereTestCompleted(FALSE)->get();
     }
 
     public function current_track(){

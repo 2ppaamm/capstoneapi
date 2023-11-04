@@ -141,7 +141,7 @@ class Test extends Model
             }            
         }
 
-        $new_questions = $this->uncompletedQuestions()->get();
+        $new_questions = $this->uncompletedQuestions()->with('skill.tracks')->get();
 
         if (!count($new_questions) && count($this->questions)) { //no new question and this user has already tested
 //        if (count($this->questions()->get()) <= $this->questions()->sum('question_answered')){

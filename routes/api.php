@@ -60,6 +60,7 @@ Route::resource('skills', 'SkillController', ['except' =>['edit']]);
 Route::resource('questions', 'QuestionController', ['except' =>['edit']]);
 Route::resource('enrolments', 'EnrolmentController');
 Route::resource('skills.questions', 'SkillQuestionsController', ['except' => ['edit', 'create']]);
+Route::resource('tracks.questions', 'TrackQuestionsController', ['except' => ['edit', 'create']]);
 Route::delete('tracks/{track}/skills','TrackSkillController@deleteSkills');
 Route::resource('tracks.skills', 'TrackSkillController', ['except' => ['edit', 'create']]);
 Route::get('/enrols/users', 'EnrolmentController@user_houses');
@@ -68,6 +69,7 @@ Route::get('/enrols/teachers', 'EnrolmentController@teacher_houses');
 Route::get('users/{username}/logs','LogController@show');
 Route::get('logs', 'LogController@index');
 
-Route::post('/test/protected', 'DiagnosticController@index');
+Route::post('/test/protected/{type}', 'DiagnosticController@index');
 Route::post('test/mastercode', 'DiagnosticController@store');
 Route::post('/test/answers', 'DiagnosticController@answer');
+Route::post('/loginInfo', 'DiagnosticController@login');

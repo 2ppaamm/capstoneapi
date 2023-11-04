@@ -61,14 +61,17 @@ class QuizController extends Controller
         if ($request->exists('skills')) {
             $skills = array_wrap($request->get('skills'));
             $quiz->skills()->sync($skills,false);
-            foreach ($skills as $skill) {
+            $skillIds = array_column($quiz->skills, 'id'); // Extract the skill IDs from the array
+            $questions = Questions::whereIn('skill_id', $skillIds)->take(50)->get();
+
+/*            foreach ($skills as $skill) {
                 // add questions
                 $questionId = Question::where('skill_id', $skill)->whereSource('diagnostic')->value('id');
                 if ($questionId) {
                     $quiz->questions()->sync($questionId, false);
                 }
 
-            }
+            }*/
         }
 
         return $quiz->with('skills','houses')->get();
@@ -96,7 +99,7 @@ class QuizController extends Controller
     public function update(Request $request, Quiz $quiz)
     {
         $logon_user = Auth::user();
-        if (!$logon_user->is_admin) {
+        if (!$logon_user->is_admin || $login_user->id == $quiz->user->id) {
             return response()->json(['message' => 'You have no access rights to update skill', 'code' => 401], 401);
         }
 
@@ -151,6 +154,7 @@ class QuizController extends Controller
 
     public function create()
     {
-        return ['statuses' => Status::select('id','status','description')->get(), 'skills' => Skill::select('id','skill','description')->get(), 'houses'=>House::select('id','house','description')->get()];
+        $houses = Auth::user()->is_admin ? House::select('id','house','description')->get() : House::whereUserId(Auth::user()->id)->select('id','house','description')->get();  
+        return ['statuses' => Status::select('id','status','description')->get(), 'skills' => Skill::select('id','skill','description')->get(), 'houses'=>$houses];
     }
 }

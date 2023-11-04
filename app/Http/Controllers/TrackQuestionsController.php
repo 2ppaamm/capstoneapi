@@ -3,16 +3,12 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-
-use App\Http\Requests;
-use App\Http\Controllers\Controller;
-use App\Skill;
+use App\Track;
 use App\Question;
-use App\Http\Requests\CreateQuestionRequest;
-use App\Http\Requests\UpdateRequest;
+use App\Skill;
 use Auth;
 
-class SkillQuestionsController extends Controller
+class TrackQuestionsController extends Controller
 {
     public function __construct(){
     }
@@ -22,8 +18,12 @@ class SkillQuestionsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(Skill $skill)
+    public function index(Track $track)
     {
+    	$user = Auth::user();
+    	return $user->skillspassed()->get();
+    	return $user->skilluser;
+    	//return $track->skill;
         $questions = $skill->questions;
 
         if (sizeof($questions) <1) {

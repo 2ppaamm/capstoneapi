@@ -17,6 +17,10 @@ use App\Error;
 use App\Course;
 use App\Enrolment;
 use App\Role;
+use App\House_Track;
+use App\Skill_Track;
+use App\Track;
+use App\Skill;
 use App\Http\Requests\StoreMasterCodeRequest;
 use Illuminate\Support\Facades\Mail;
 use Carbon\Carbon;
@@ -29,11 +33,33 @@ class DiagnosticController extends Controller
 
     /**
      *
+     * Fetch Login Info for the front end
+     *
+    **/
+    public function login(){
+        $user = Auth::user();
+        $enrolled = $user->enrolment()->get();
+        if (!$enrolled){
+            return response()->json(['message' => "", 'code'=>203], 203);                        
+        } else {
+            $housetracks = House_Track::whereIn('house_id', Enrolment:: whereUserId($user->id)->pluck('house_id'))->get();
+            $tracks=Track::with('skills')->whereIn('id', $housetracks->pluck('track_id'))->select('description', 'id')->get();
+            //return $user->completedskills()->with('tracks')->get();
+            $completedskills = Skill_Track::whereIn('skill_id', $user->completedskills()->pluck('skill_id'))->get();
+            $skills = Skill_Track::whereIn('track_id', $housetracks->pluck('track_id'))->get();
+            return response()->json(['completedskills' => $completedskills, 'tracks' => $tracks, 'skills' => $skills, 'user' => $user, 'code' => 200], 200);
+        }
+        //return $enrolled;
+        //return Skill_Track::whereIn('track_id', function($query){ House_Track::whereHouseId(Enrolment:: whereUserId=($user->id)->pluck('house_id'))->pluck('track_id')})->get();
+    }
+
+    /**
+     *
      * One question from the highest skill of each track from the appropriate level
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(){
+    public function index($type){
         $courses = Course::where('course', 'LIKE', '%Math%')->pluck('id'); //any math course id
         $allreadycourses = Course::where('course','LIKE','%AllReady%')->pluck('id'); //all ready course id
         $quiz=[];
@@ -44,10 +70,11 @@ class DiagnosticController extends Controller
         if (!count($enrolled)) return response()->json(['message'=>'Not properly enrolled or first time user', 'code'=>203]);
         $house = \App\House::findOrFail($enrolled->last()->house_id);
 
-        if (count($allreadyenrolled)>0) {                               // if enrolled in AllReady Math program
-            $diagnostic = count($user->completedquizzes)<1 || $user->diagnostic ? TRUE : FALSE;
+        // If enrolled
+        if (count($allreadyenrolled)>0) {   
+            //If first quiz                               // if enrolled in AllReady Math program
+            $diagnostic = count($user->completedquizzes)<1 || $user->diagnostic || $type == 'test' ? TRUE : FALSE;
             $quiz_name = $diagnostic ? $house->house : $user->name;
-
             // if $diagnostic
             //    if housequiz exists
             //       if user assigned to an incomplete housequiz
@@ -95,7 +122,89 @@ class DiagnosticController extends Controller
             $diagnostic ? $new_quiz->houses()->sync([$house->id=>['start_date'=>date('Y-m-d', strtotime('-1 day')), 'end_date'=>date('Y-m-d', strtotime('+1 month'))]], false) : null; //assign house quiz
 
             $new_quiz->quizzees()->sync([$user->id], false);
+
             return $new_quiz->fieldQuestions($user, $house);                // output quiz questions
+        } else {
+            //return "test";
+            // FOR TESTS NOT QUIZ
+            $diagnostic = count($user->tests)<1 || $user->diagnostic || $type == 'test' ? TRUE : FALSE;
+            $test_name = $diagnostic ? $house->house : $user->name;
+            // if $diagnostic
+            //    if housequiz exists
+            //       if user assigned to an incomplete housequiz
+            //             $quiz = latest housequiz assigned to user
+            //       else $quiz = newest housequiz
+            //    else create a new diagnostic house quiz
+            // elseif user has incomplate quizzes
+            //       $quiz = latest incomplete quiz
+            //    else create a new personal quiz
+
+            //USE FOR CONTINUE instead of diagnostic
+            /*
+
+            if ($diagnostic){
+                if (count($house->valid_tests)) {
+                    if (count($house->incomplete_housetest($user))){
+                       $test = $house->incomplete_housetest($test)->last(); 
+                    }
+                else { 
+                       $test = $house->valid_tests->diff($user->tests)->last(); 
+                    }
+                }
+            } else {
+                if (count($user->incompletetests()) > 0) {
+                    $quiz = $user->incompletequizzes()->first(); 
+                }
+             }
+            */
+
+            if (!$diagnostic){
+                if (count($user->incompletetests) > 0) {
+                    $new_test = $user->incompletetests()->first();
+                } 
+            } else {
+                $diagnostictests = (count($user->diagnostictests)>0) ? $user->diagnostictests()->first() : null;
+                $user->diagnostictests()->detach($diagnostictests);
+                //$diagnostictests->questions()->detach();
+                $new_test = $user->tests()->create(['test'=>$test_name."'s ".date("m/d/Y")." Test",'description'=> $test_name."'s ".date("m/d/Y")." Test", 'start_available_time'=> date('Y-m-d', strtotime('-1 day')), 'end_available_time'=>date('Y-m-d', strtotime('+1 month')),'diagnostic'=>$diagnostic]);
+                //$diagnostictests ? $diagnostictests->delete():null;
+            }
+
+            //if there's a house quiz and $diagnostic
+            //   if there's incompleted quiz, $quiz = incomplete quiz
+            //   else create new quiz
+            //elseif user has inomplete house quizzes
+            //      $quiz = not completed housequiz
+            //    else $quiz= house quiz
+/*            if (count($house->valid_quizzes) < 1){
+                if (count($user->incompletequizzes) > 0){
+                    $quiz = $user->incompletequizzes()->first();   
+                }
+            }
+            elseif (count($house->incomplete_housequiz($user))>0){    //there are house quizzes incompleed or not attempted
+                    $quiz = $house->incomplete_housequiz($user)->last();
+                }
+                else {
+                    $quiz = $house->valid_quizzes->diff($user->quizzes)->last();
+                }
+
+*/  
+
+            $new_test->testee()->sync([$user->id], false);
+            $fieldedquestions = (($new_test->fieldQuestions($user))); //Generate questions
+           // $fieldedquestionstracks = Skill_Track::whereIn('skill_id', $fieldedquestions->select('skill_id'))->get();
+
+            //return json_last_error();
+            return ($fieldedquestions);
+
+            // ONLY GET TRACKS WHICH USE THE SKILLS IN THE QUESTION LIST
+  
+            $housetracks = House_Track::whereIn('house_id', Enrolment:: whereUserId($user->id)->pluck('house_id'))->get();
+            $tracks=Track::with('skills')->whereIn('id', $housetracks->pluck('track_id'))->select('description', 'id')->get();
+            //return $user->completedskills()->with('tracks')->get();
+            $completedskills = Skill_Track::whereIn('skill_id', $user->completedskills()->pluck('skill_id'))->get();
+            $skills = Skill_Track::whereIn('track_id', $housetracks->pluck('track_id'))->get();
+            return response()->json(['fieldedquestions' => $new_test->fieldQuestions($user),'completedskills' => $completedskills, 'tracks' => $tracks, 'skills' => $skills, 'user' => $user, 'code' => 200], 200);
         }
 
         $test = count($user->currenttest)<1 ? !count($user->completedtests) || $user->diagnostic ? 
