@@ -12,6 +12,7 @@ use Auth;
 use App\Http\Requests\CreateQuizAnswersRequest;
 use DateTime;
 use App\User;
+use App\Test;
 use Config;
 use App\Error;
 use App\Course;
@@ -47,7 +48,7 @@ class DiagnosticController extends Controller
             //return $user->completedskills()->with('tracks')->get();
             $completedskills = Skill_Track::whereIn('skill_id', $user->completedskills()->pluck('skill_id'))->get();
             $skills = Skill_Track::whereIn('track_id', $housetracks->pluck('track_id'))->get();
-            return response()->json(['completedskills' => $completedskills, 'tracks' => $tracks, 'skills' => $skills, 'user' => $user, 'code' => 200], 200);
+            return response()->json(['completedskills' => $completedskills, 'tracks' => $tracks, 'skills' => $skills, 'continuetrigger' => count($user->incompletetests), 'user' => $user, 'code' => 200], 200);
         }
         //return $enrolled;
         //return Skill_Track::whereIn('track_id', function($query){ House_Track::whereHouseId(Enrolment:: whereUserId=($user->id)->pluck('house_id'))->pluck('track_id')})->get();
@@ -129,35 +130,6 @@ class DiagnosticController extends Controller
             // FOR TESTS NOT QUIZ
             $diagnostic = count($user->tests)<1 || $user->diagnostic || $type == 'test' ? TRUE : FALSE;
             $test_name = $diagnostic ? $house->house : $user->name;
-            // if $diagnostic
-            //    if housequiz exists
-            //       if user assigned to an incomplete housequiz
-            //             $quiz = latest housequiz assigned to user
-            //       else $quiz = newest housequiz
-            //    else create a new diagnostic house quiz
-            // elseif user has incomplate quizzes
-            //       $quiz = latest incomplete quiz
-            //    else create a new personal quiz
-
-            //USE FOR CONTINUE instead of diagnostic
-            /*
-
-            if ($diagnostic){
-                if (count($house->valid_tests)) {
-                    if (count($house->incomplete_housetest($user))){
-                       $test = $house->incomplete_housetest($test)->last(); 
-                    }
-                else { 
-                       $test = $house->valid_tests->diff($user->tests)->last(); 
-                    }
-                }
-            } else {
-                if (count($user->incompletetests()) > 0) {
-                    $quiz = $user->incompletequizzes()->first(); 
-                }
-             }
-            */
-
             if (!$diagnostic){
                 if (count($user->incompletetests) > 0) {
                     $new_test = $user->incompletetests()->first();
@@ -169,27 +141,6 @@ class DiagnosticController extends Controller
                 $new_test = $user->tests()->create(['test'=>$test_name."'s ".date("m/d/Y")." Test",'description'=> $test_name."'s ".date("m/d/Y")." Test", 'start_available_time'=> date('Y-m-d', strtotime('-1 day')), 'end_available_time'=>date('Y-m-d', strtotime('+1 month')),'diagnostic'=>$diagnostic]);
                 //$diagnostictests ? $diagnostictests->delete():null;
             }
-
-            //if there's a house quiz and $diagnostic
-            //   if there's incompleted quiz, $quiz = incomplete quiz
-            //   else create new quiz
-            //elseif user has inomplete house quizzes
-            //      $quiz = not completed housequiz
-            //    else $quiz= house quiz
-/*            if (count($house->valid_quizzes) < 1){
-                if (count($user->incompletequizzes) > 0){
-                    $quiz = $user->incompletequizzes()->first();   
-                }
-            }
-            elseif (count($house->incomplete_housequiz($user))>0){    //there are house quizzes incompleed or not attempted
-                    $quiz = $house->incomplete_housequiz($user)->last();
-                }
-                else {
-                    $quiz = $house->valid_quizzes->diff($user->quizzes)->last();
-                }
-
-*/  
-
             $new_test->testee()->sync([$user->id], false);
             $fieldedquestions = (($new_test->fieldQuestions($user))); //Generate questions
            // $fieldedquestionstracks = Skill_Track::whereIn('skill_id', $fieldedquestions->select('skill_id'))->get();
@@ -198,13 +149,13 @@ class DiagnosticController extends Controller
             return ($fieldedquestions);
 
             // ONLY GET TRACKS WHICH USE THE SKILLS IN THE QUESTION LIST
-  
+            /*
             $housetracks = House_Track::whereIn('house_id', Enrolment:: whereUserId($user->id)->pluck('house_id'))->get();
             $tracks=Track::with('skills')->whereIn('id', $housetracks->pluck('track_id'))->select('description', 'id')->get();
             //return $user->completedskills()->with('tracks')->get();
             $completedskills = Skill_Track::whereIn('skill_id', $user->completedskills()->pluck('skill_id'))->get();
             $skills = Skill_Track::whereIn('track_id', $housetracks->pluck('track_id'))->get();
-            return response()->json(['fieldedquestions' => $new_test->fieldQuestions($user),'completedskills' => $completedskills, 'tracks' => $tracks, 'skills' => $skills, 'user' => $user, 'code' => 200], 200);
+            return response()->json(['fieldedquestions' => $new_test->fieldQuestions($user),'completedskills' => $completedskills, 'tracks' => $tracks, 'skills' => $skills, 'user' => $user, 'code' => 200], 200);*/
         }
 
         $test = count($user->currenttest)<1 ? !count($user->completedtests) || $user->diagnostic ? 
@@ -263,11 +214,10 @@ class DiagnosticController extends Controller
         $user = Auth::user();
         $house = \App\House::findOrFail($user->enrolledClasses()->latest()->first()->house_id);
         $quiz = $user->quizzes()->latest()->first();
-        $test = $user->tests()->latest()->first();
+        $test = Test::find($request->test);
         if (!$test && !$quiz){
             return response()->json(['message' => 'Invalid Test/Quiz', 'code'=>405], 405);    
         }
-
         foreach ($request->question_id as $key=>$question_id) {
             $question = Question::find($question_id);
             $answer = $request->answer;
@@ -310,7 +260,8 @@ class DiagnosticController extends Controller
             }
         }
 
-        return !$quiz ? $test->fieldQuestions($user): $quiz->fieldQuestions($user, $house);
+        //return !$quiz ? $test->fieldQuestions($user): $quiz->fieldQuestions($user, $house);
+        return $test->fieldQuestions($user);
     }
     /**
      * Enrolls a student 

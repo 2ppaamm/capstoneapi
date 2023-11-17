@@ -138,7 +138,7 @@ class Test extends Model
 
             foreach ($questions as $question){
                 $question ? $question->assigned($user, $this) : null;
-            }            
+            }
         }
 
         $new_questions = $this->uncompletedQuestions()->with('skill.tracks')->get();
