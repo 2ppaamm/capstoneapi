@@ -5,6 +5,8 @@ namespace App;
 use Illuminate\Database\Eloquent\Model;
 use DateTime;
 use Config;
+use App\Question;
+
 
 class Test extends Model
 {
@@ -17,7 +19,7 @@ class Test extends Model
     public function questions(){
         return $this->belongsToMany(Question::class, 'question_user')->withPivot('correct','question_answered','answered_date', 'attempts', 'user_id')->withTimestamps();
     }
-
+ 
     public function user() {
         return $this->belongsTo(User::class);
     }
@@ -59,7 +61,7 @@ class Test extends Model
     }
 
     public function uncompletedQuestions(){
-        return $this->questions()->whereQuestionAnswered(FALSE);
+        return $this->questions()->wherePivot('question_answered',FALSE);
     }
 
     public function attempts($userid){
@@ -152,6 +154,29 @@ class Test extends Model
         // field unanswered questions
         $test_questions = count($new_questions)< Config::get('app.questions_per_quiz')+1 ? $new_questions : $new_questions->take(Config::get('app.questions_per_quiz'));
         return response()->json(['message' => 'Request executed successfully', 'test'=>$this->id, 'questions'=>$test_questions, 'code'=>201]);
+    }
+
+    public function fieldDiagnosticQuestions($course) {
+        $randomQuestions = collect();
+
+        // Fetch tracks associated with the course
+        $tracks = $course->tracks;
+
+        foreach ($tracks as $track) {
+            // Fetch skill IDs associated with this track
+            $skillIds = $track->skills->pluck('id');
+
+            // Fetch one random question from any of these skills
+            $randomQuestion = Question::whereIn('skill_id', $skillIds)
+                                      ->inRandomOrder() // Order by random
+                                      ->first(); // Take the first one after randomizing
+
+            if ($randomQuestion) {
+                $randomQuestions->push($randomQuestion);
+            }
+        }
+
+        return $randomQuestions;
     }
 
     public function completeTest($message, $user){

@@ -18,8 +18,12 @@ class FieldTrackQuestionController extends Controller
     public function index(Track $track)
     {
         $user = Auth::user();
+        $questions=[];
         // If there are no tests
-        if (count($user->incompletetests()->whereTest($user->name."'s ".$track->track." tracktest", $track->test)->get()) < 1) {
+
+        if ($user->incompletetests()
+         ->where('test', 'REGEXP', '[[:<:]]' . preg_quote($track->track) . '[[:>:]]')
+         ->count() < 1) {
             // Create test - comment out when testing with postman
             $test = $user->tests()->create(['test'=>$user->name."'s ".$track->track." tracktest",'description'=> $user->name."'s ".date("m/d/Y")." ".$track->track." tracktest", 'start_available_time'=> date('Y-m-d', strtotime('-1 day')), 'end_available_time'=>date('Y-m-d', strtotime('+1 year')),'diagnostic'=>FALSE]);
             $skills = $track->skills()->pluck("id");
@@ -27,7 +31,7 @@ class FieldTrackQuestionController extends Controller
             $userId = $user->id;
             
             // find questions in track
-            //$questions = Question::whereIn('skill_id', $skills)->inRandomOrder()->limit(Config::get('app.questions_per_test'))->get();
+            $questions = Question::whereIn('skill_id', $skills)->inRandomOrder()->limit(Config::get('app.questions_per_test'))->get();
 
             // select questions user got correct in track
             $correctquestions = Question::whereHas('users', function ($query) use ($userId) {
@@ -35,38 +39,49 @@ class FieldTrackQuestionController extends Controller
             })->whereIn('skill_id', $skills)->get();
 
             // subtract questions that have been attempted and are correct
-            $availablequestions = Question::whereNotIn('id', $correctquestions->pluck('id'))->whereIn('skill_id', $skills)->get();
+            $unattemptedquestions = Question::whereNotIn('id', $correctquestions->pluck('id'))->whereIn('skill_id', $skills)->get();
 
             // if there are less than 20 pick already finished questions to supplement
-            if (count($availablequestions) < Config::get('app.questions_per_test') - 1) {
+            if (count($test->questions) < Config::get('app.questions_per_test') - 1) {
                 // get amount of needed questions
-                $neededamount = (Config::get('app.questions_per_test') - 1) - count($availablequestions);
+                $neededamount = (Config::get('app.questions_per_test') - 1) - count($test->questions);
 
                 // get needed questions
                 $neededquestions = $correctquestions->shuffle()->slice(0, $neededamount);
 
+                 // put new needed questions in join table
+                foreach ($questions as $question){
+                  $question ? $question->assigned($user, $test) : null;
+                }
                 // add needed questions to questions
-                $questions = $availablequestions->concat($neededquestions);
-            } else {
-                // select random questions
-                $questions = $availablequestions->shuffle()->slice(0, Config::get('app.questions_per_test')-1);
-            }
+                $questions = $unattemptedquestions->concat($neededquestions);
 
-            return $questions;
-
-            // put data in join table
-            foreach ($questions as $question){
-                $question ? $question->assigned($user, $test) : null;
-            }
+            }              
         } else {
             // If there are are/is an existing test(s)
-            $test = $user->incompletetests()->whereTest($user->name."'s ".$track->track." tracktest", $track->test)->first();
-            $new_questions = $test->uncompletedQuestions()->with('skill.tracks')->get();
-            $test_questions = count($new_questions)< Config::get('app.questions_per_quiz')+1 ? $new_questions : $new_questions->take(Config::get('app.questions_per_quiz'));
-            return response()->json(['message' => 'Request executed successfully', 'test'=>$test->id, 'questions'=>$test_questions, 'code'=>201]);
+          $test = $user->incompletetests()
+         ->where('test', 'REGEXP', '[[:<:]]' . preg_quote($track->track) . '[[:>:]]')->latest()->first();
+            $testquestions=$test->questions;
+            // if there are less than 20 pick any question that are not in $testquestions
+            if (count($testquestions) < Config::get('app.questions_per_test') - 1) {
+                // get amount of needed questions
+                $neededamount = (Config::get('app.questions_per_test') - 1) - count($testquestions);
+ 
+                // get needed questions
+                $neededquestions = $track->questions()
+                ->whereNotIn('id', $testquestions->pluck('id'))
+                ->get()
+                ->shuffle()
+                ->take($neededamount);
 
+                // put data in join table
+                foreach ($neededquestions as $question){
+                    $question ? $question->assigned($user, $test) : null;
+                }
+                // add needed questions to questions
+                $questions = $testquestions->concat($neededquestions);
+            } 
         }
-
         $fieldquestions = $test->uncompletedQuestions()->take(Config::get('app.questions_per_quiz'))->get();
 
         return response()->json(['message' => 'Request executed successfully', 'test'=>$test->id, 'questions'=>$fieldquestions, 'code'=>201]);

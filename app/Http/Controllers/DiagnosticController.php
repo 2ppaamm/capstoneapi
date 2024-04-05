@@ -31,27 +31,36 @@ class DiagnosticController extends Controller
     public function __construct(){
 //	$this->middleware('cors');
     }
+    /**
+     *
+     * Fetch Login Info for the front end
+     *
+    **/ 
+    public function first(){
+        return Question::take(5)->get();
+    }
 
     /**
      *
      * Fetch Login Info for the front end
      *
-    **/
+    **/ 
     public function login(){
+        $courses = Course::where('course', 'LIKE', '%Math%')->pluck('id'); //any math course id
+        $quiz=[];
         $user = Auth::user();
-        $enrolled = $user->enrolment()->get();
+        $enrolled = $user->validEnrolment($courses); //all math courses enrolled in
+
+        if (!count($enrolled)) return response()->json(['message'=>'Not properly enrolled or first time user', 'code'=>203]);
         if (!$enrolled){
             return response()->json(['message' => "", 'code'=>203], 203);                        
-        } else {
-            $housetracks = House_Track::whereIn('house_id', Enrolment:: whereUserId($user->id)->pluck('house_id'))->get();
-            $tracks=Track::with('skills')->whereIn('id', $housetracks->pluck('track_id'))->select('description', 'id')->get();
-            //return $user->completedskills()->with('tracks')->get();
-            $completedskills = Skill_Track::whereIn('skill_id', $user->completedskills()->pluck('skill_id'))->get();
-            $skills = Skill_Track::whereIn('track_id', $housetracks->pluck('track_id'))->get();
-            return response()->json(['completedskills' => $completedskills, 'tracks' => $tracks, 'skills' => $skills, 'continuetrigger' => count($user->incompletetests), 'user' => $user, 'code' => 200], 200);
         }
-        //return $enrolled;
-        //return Skill_Track::whereIn('track_id', function($query){ House_Track::whereHouseId(Enrolment:: whereUserId=($user->id)->pluck('house_id'))->pluck('track_id')})->get();
+        $housetracks = House_Track::whereIn('house_id', Enrolment:: whereUserId($user->id)->pluck('house_id'))->get();
+        $tracks=Track::with('skills')->whereIn('id', $housetracks->pluck('track_id'))->select('description', 'id', 'image')->get();
+            //return $user->completedskills()->with('tracks')->get();
+        $completedskills = Skill_Track::whereIn('skill_id', $user->completedskills()->pluck('skill_id'))->get();
+        $skills = Skill_Track::whereIn('track_id', $housetracks->pluck('track_id'))->get();
+        return response()->json(['completedskills' => $completedskills, 'tracks' => $tracks, 'skills' => $skills, 'continuetrigger' => count($user->incompletetests),  'user' => $user, 'code' => 200], 200);
     }
 
     /**
@@ -161,7 +170,7 @@ class DiagnosticController extends Controller
         $test = count($user->currenttest)<1 ? !count($user->completedtests) || $user->diagnostic ? 
             $user->tests()->create(['test'=>$user->name."'s Diagnostic test",'description'=> $user->name."'s diagnostic test ".date('Y-m-d',strtotime('0 day')), 'start_available_time'=> date('Y-m-d', strtotime('-1 day')), 'end_available_time'=>date('Y-m-d', strtotime('+1 year')),'diagnostic'=>TRUE, 'level_id'=>2]):
             $user->tests()->create(['test'=>$user->name."'s ".date("m/d/Y")." test",'description'=> $user->name."'s ".date("m/d/Y")." Test", 'start_available_time'=> date('Y-m-d', strtotime('-1 day')), 'end_available_time'=>date('Y-m-d', strtotime('+1 year')),'diagnostic'=>FALSE]):
-            $user->currenttest[0];
+            $user->currenttest[0];  
         return $test->fieldQuestions($user);                // output test questions
     }
 
@@ -172,7 +181,7 @@ class DiagnosticController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function store(StoreMasterCodeRequest $request){
+ /*   public function store(StoreMasterCodeRequest $request){
 //        $courses = Course::where('course', 'LIKE', '%K to 6 Math%')->pluck('id');
         $user = Auth::user();
         $check_mastercode = $request->mastercode >0 ? Enrolment::whereMastercode($request->mastercode)->first():null;
@@ -189,7 +198,8 @@ class DiagnosticController extends Controller
             $check_mastercode->save();
             $enrolment = Enrolment::firstOrNew(['user_id'=>$user->id, 'house_id'=>$check_mastercode->house_id, 'role_id'=>Role::where('role', 'LIKE', '%Student%')->first()->id]);
             $enrolment->fill(['start_date'=>new DateTime('now'),'expiry_date'=>(new DateTime('now'))->modify('+1 year'), 'payment_email'=>$check_mastercode->payment_email, 'purchaser_id'=>$check_mastercode->user_id, 'transaction_id'=>$check_mastercode->transaction_id, 'payment_status'=>$check_mastercode->payment_status, 'amount_paid'=>$check_mastercode->amount_paid, 'currency_code'=>$check_mastercode->currency_code])->save();
-            $user->date_of_birth = Carbon::createFromFormat('m/d/Y', $request->date_of_birth)->format('Y-m-d');        
+                $user->date_of_birth = Carbon::createFromFormat('Y-m-d', $request->date_of_birth)->format('Y-m-d');
+        
             $user->update(['firstname'=>$request->firstname, 'lastname'=>$request->lastname, 'date_of_birth'=>$user->date_of_birth]);
             $note = 'Dear '.$user->firstname.',<br><br>Thank you for enrolling in the '.$houses->description.' program!<br><br> You should be presented questions for the diagnosis test and we will start to monitor your progress from now.<br><br> You should check your progress periodically at https://math.allgifted.com. <br><br>Should you have any queries, please do not hesitate to contact us at math@allgifted.com.<br><br>Thank you. <br><br> <i>This is an automated machine generated by the All Gifted System.</i>';
 
@@ -203,7 +213,7 @@ class DiagnosticController extends Controller
         } else return response()->json(['message'=>'There is no more places left for the mastercode you keyed in.',  'code'=>404], 404);
         return $this->index();
     }
-
+**** old mastercode Codes/
     /**
      * Checks answers and then sends a new set of questions, according to correctness of 
      * questions.  Checks the following
@@ -218,6 +228,7 @@ class DiagnosticController extends Controller
         if (!$test && !$quiz){
             return response()->json(['message' => 'Invalid Test/Quiz', 'code'=>405], 405);    
         }
+        
         foreach ($request->question_id as $key=>$question_id) {
             $question = Question::find($question_id);
             $answer = $request->answer;

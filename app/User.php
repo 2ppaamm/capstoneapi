@@ -17,6 +17,7 @@ use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
 use DateTime;
 use Mail;
 use Config;
+use Carbon\Carbon;
 
 class User extends Model implements AuthenticatableContract,
                                     AuthorizableContract,
@@ -88,7 +89,7 @@ class User extends Model implements AuthenticatableContract,
     public function fields(){
         return $this->belongsToMany(Field::class)->withPivot('field_maxile', 'field_test_date', 'month_achieved')->withTimestamps();
     }
-
+    //user has these skills
     public function skilluser(){
         return $this->belongsToMany(Skill::class)->withPivot('skill_maxile', 'skill_test_date','skill_passed','difficulty_passed')->withTimestamps();
     }
@@ -212,8 +213,12 @@ class User extends Model implements AuthenticatableContract,
         return $this->belongsToMany(Test::class)->withPivot('test_completed','completed_date', 'result', 'attempts')->withTimestamps();
     }
 
-    public function incompletetests(){
-        return $this->tests()->whereTestCompleted(0)->where('start_available_time', '<=', new DateTime('today'))->where('end_available_time','>=', new DateTime('today'))->orderBy('created_at','desc');
+    public function incompletetests() {
+        return $this->tests()
+                    ->wherePivot('test_completed', 0) // Ensure 'test_completed' is referenced correctly
+                    ->where('tests.start_available_time', '<=', now()) // Assuming 'start_available_time' and 'end_available_time' are columns on the 'tests' table
+                    ->where('tests.end_available_time', '>=', now())
+                    ->orderBy('tests.created_at', 'desc'); // Ensure you're ordering by the test creation date
     }
 
     public function diagnostictests() {

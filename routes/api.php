@@ -1,5 +1,7 @@
 <?php
 use Illuminate\Http\Request;
+use App\Http\Controllers\VisitorController;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -70,7 +72,9 @@ Route::get('users/{username}/logs','LogController@show');
 Route::get('logs', 'LogController@index');
 
 Route::post('/test/protected/{type}', 'DiagnosticController@index');
-Route::post('test/mastercode', 'DiagnosticController@store');
+Route::post('/mastercode', 'VisitorController@mastercode');
 Route::post('/test/answers', 'DiagnosticController@answer');
 Route::post('/loginInfo', 'DiagnosticController@login');
 Route::post('/test/trackquestions/{track}', 'FieldTrackQuestionController@index');
+Route::post('/diagnostic','VisitorController@diagnostic');
+Route::post('/subscribe', 'VisitorController@subscribe');

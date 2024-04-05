@@ -80,12 +80,15 @@ class Question extends Model
     }
 
     /*
-     *  Assigns skill to users, questions to users, questions to test
+     *  Assigns skill to users, questions to users, questions to test, skills to test, tracks to the test, note that test-user is already assigned when test was created.
      */
     public function assigned($user, $test){
-        $this->skill->users()->sync([$user->id], false);
+        $this->users()->sync([$user->id], false);         
+        $user->skilluser()->sync([$this->skill_id], false);
         $this->tests()->sync([$test->id =>['user_id'=>$user->id]], false);
         $test->skills()->sync([$this->skill_id], false);
+        $tracks = Skill::find($this->skill_id)->first()->tracks;
+        $user->testedTracks()->syncWithoutDetaching($tracks);
         return $test;
     }
 
@@ -98,7 +101,7 @@ class Question extends Model
         $this->quizzes()->sync([$quiz->id],false);
         $quiz->skills()->sync([$this->skill_id], false);
         $track = $this->skill->tracks()->pluck('id')->intersect($house->tracks()->pluck('id'));
-        $user->testedTracks()->sync($track, false);
+        $user->testedTracks()->syncWithoutDetaching($tracks);
         return $quiz;
     }
 }

@@ -34,9 +34,11 @@ class Track extends Model
         return $this->belongsTo(Field::class)->select('id','field','description');
     }
 
-    public function questions(){
-        return $this->hasManyThrough(Question::class, Skill::class);
+    public function questions()
+    {
+        return $this->hasMany(Question::class, 'skill_id');
     }
+
 
     public function postReqTracks(){
         return $this->belongsToMany(Track::class,'track_track','preReq_track_id', 'track_id');
