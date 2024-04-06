@@ -57,10 +57,19 @@ class DiagnosticController extends Controller
         }
         $housetracks = House_Track::whereIn('house_id', Enrolment:: whereUserId($user->id)->pluck('house_id'))->get();
         $tracks=Track::with('skills')->whereIn('id', $housetracks->pluck('track_id'))->select('description', 'id', 'image')->get();
-            //return $user->completedskills()->with('tracks')->get();
-        $completedskills = Skill_Track::whereIn('skill_id', $user->completedskills()->pluck('skill_id'))->get();
+        $tracksData = $tracks->map(function ($track) {
+            return [
+                'id' => $track->id,
+                'description' => $track->description,
+                'image' => $track->image,
+                'level'=>$track->level_id,
+                'doneNess' => $track->pivot ? $track->pivot->doneNess : null,
+            ];
+        });
+                    //return $user->completedskills()->with('tracks')->get();
+        //$completedskills = Skill_Track::whereIn('skill_id', $user->completedskills()->pluck('skill_id'))->get();
         $skills = Skill_Track::whereIn('track_id', $housetracks->pluck('track_id'))->get();
-        return response()->json(['completedskills' => $completedskills, 'tracks' => $tracks, 'skills' => $skills, 'continuetrigger' => count($user->incompletetests),  'user' => $user, 'code' => 200], 200);
+        return response()->json(['tracks' => $tracksData, 'skills' => $skills, 'continuetrigger' => count($user->incompletetests),  'user' => $user, 'code' => 200], 200);
     }
 
     /**
@@ -258,12 +267,13 @@ class DiagnosticController extends Controller
                 $skill_maxile = $question->skill->handleAnswer($user->id, $question->difficulty_id, $correctness, $track, $test);
                 $track_maxile = $track->calculateMaxile($user, $correctness, $test);
                 $field_maxile = $user->storefieldmaxile($track_maxile, $track->field_id);
+                $track_percentile=$track->storeDoneNess($user);
 
                 // find the class
                 if (!$test->diagnostic) {
                     $house = $track->houses->intersect(\App\House::whereIn('id', Enrolment:: whereUserId($user->id)->whereRoleId(6)->pluck('house_id'))->get())->first();
                     if ($house) {
-                        $enrolment = Enrolment::whereUserId($user->id)->whereRoleId(6)->whereHouseId($house-> id)->first();
+                        $enrolment = Enrolment:: whereUserId($user->id)->whereRoleId(6)->whereHouseId($house-> id)->first();
                         $enrolment['progress'] = round($user->tracksPassed->intersect(\App\House::find(1)->tracks)->avg('level_id')*100);
                         $enrolment->save();
                     }
@@ -275,7 +285,7 @@ class DiagnosticController extends Controller
         return $test->fieldQuestions($user);
     }
     /**
-     * Enrolls a student 
+     * Enrolls a student  
      *
      * @return \Illuminate\Http\Response
      */

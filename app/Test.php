@@ -97,7 +97,20 @@ class Test extends Model
                 
                 // get questions, then log track, assign question to user
                 foreach ($level->tracks as $track) {  //diagnostic => 1 track 1 question
-                    $questions = $questions->merge(Question::whereIn('skill_id', $track->skills->pluck('id'))->orderBy('difficulty_id','desc')->inRandomOrder()->take(1)->get()); 
+                    $randomQuestion = Question::whereIn('skill_id', $track->skills->pluck('id'))
+                        ->with(['skill' => function($query) use ($track) {
+                            $query->where('track_id', $track->id)
+                        ->withPivot('doneNess');
+                              }])
+                        ->orderBy('difficulty_id', 'desc')
+                        ->inRandomOrder()
+                        ->first(['questions.*']);
+
+                    if ($randomQuestion) {
+                        $randomQuestion->doneNess = $randomQuestion->skill->pivot->doneNess ?? null;
+                        $questions->push($randomQuestion);
+                    }
+//                    $questions = $questions->merge(Question::whereIn('skill_id', $track->skills->pluck('id'))->orderBy('difficulty_id','desc')->inRandomOrder()->take(1)->get()); 
                     $track->users()->sync([$user->id], false);        //log tracks for user
                 }              
             } elseif (!count($this->questions)) {           // not diagnostic, new test
@@ -123,7 +136,7 @@ class Test extends Model
                         //find 5 questions in the track that are not already fielded and higher difficulty if some difficulty already passed
                         $skill_questions = Question::inRandomOrder()->whereSkillId($skills_to_test[$n]->id)->where('difficulty_id','>', $difficulty_passed)
                         //->whereNotIn('id', $user->myQuestions()->pluck('question_id'))
-                        ->take(5)->get();
+                        ->take(Config::get('app.questions_per_quiz'))->get();
                         if (count($skill_questions)){
                             $questions = $skill_questions->merge($questions);
                         } else {
@@ -134,7 +147,7 @@ class Test extends Model
                     $i++;
                 }
                 if (!count($questions)) {
-                    $questions = Question::inRandomOrder()->take(20)->get();
+                    $questions = Question::inRandomOrder()->take(Config::get('app.questions_per_test'))->get();
                 }
             }
 
@@ -153,6 +166,8 @@ class Test extends Model
 //        }
         // field unanswered questions
         $test_questions = count($new_questions)< Config::get('app.questions_per_quiz')+1 ? $new_questions : $new_questions->take(Config::get('app.questions_per_quiz'));
+
+
         return response()->json(['message' => 'Request executed successfully', 'test'=>$this->id, 'questions'=>$test_questions, 'code'=>201]);
     }
 
@@ -188,7 +203,14 @@ class Test extends Model
         $user->game_level = $user->game_level + $kudos_earned;  // add kudos
         $user->diagnostic = FALSE;
         $user->save();                                          //save maxile and game results
-        $this->testee()->sync([$user->id=>['test_completed'=>TRUE, 'completed_date'=>new DateTime('now'), 'result'=>$result = $this->markTest($user->id), 'attempts'=> $attempts + 1]]); 
-        return response()->json(['message'=>$message, 'test'=>$this->id, 'percentage'=>$result, 'score'=>$maxile, 'maxile'=> $maxile,'kudos'=>$kudos_earned, 'code'=>206], 206);
+        $this->testee()->sync([$user->id=>['test_completed'=>TRUE, 'completed_date'=>new DateTime('now'), 'result'=>$result = $this->markTest($user->id), 'attempts'=> $attempts + 1]]);
+
+       $userTracks = $user->tracks()->get()->map(function ($track) {
+            return [
+                'track_id' => $track->id,
+                'doneNess' => $track->pivot->doneNess,
+            ];
+        }); 
+        return response()->json(['message'=>$message, 'test'=>$this->id, 'percentage'=>$result, 'score'=>$maxile, 'maxile'=> $maxile,'kudos'=>$kudos_earned, 'tracks' => $userTracks,'code'=>206], 206);
     }
 }

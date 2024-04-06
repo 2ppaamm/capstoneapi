@@ -307,7 +307,7 @@ class User extends Model implements AuthenticatableContract,
     }
 
     public function testedTracks(){
-        return $this->belongsToMany(Track::class)->withPivot('track_maxile','track_passed','track_test_date')->withTimestamps();
+        return $this->belongsToMany(Track::class)->withPivot('track_maxile','track_passed','track_test_date', 'doneNess')->withTimestamps();
     }
 
     public function tracksPassed(){

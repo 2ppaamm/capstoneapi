@@ -23,7 +23,7 @@ class Track extends Model
     }
 
     public function users(){
-        return $this->belongsToMany(User::class)->withTimestamps()->withPivot('track_maxile','track_test_date', 'track_passed');
+        return $this->belongsToMany(User::class)->withTimestamps()->withPivot('track_maxile','track_test_date', 'track_passed','doneNess');
     }
 
     public function status() {
@@ -148,5 +148,16 @@ class Track extends Model
 
     public function owner(){
         return $this->user()->select('id','name');
+    }
+
+    // Method to calculate track doneNess in %
+    public function storeDoneNess($user) {
+        $totalSkillsInTrack = count($this->skills);
+        $completedSkillsInTrack = count($user->completedSkills->intersect($this->skills));
+
+        $doneNess = $totalSkillsInTrack > 0 ? ($completedSkillsInTrack / $totalSkillsInTrack) : 0;
+        $this->users()->updateExistingPivot($this->id, ['doneNess' => $doneNess]);
+
+        return $doneNess;
     }
 }
