@@ -20,6 +20,10 @@ class Question extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
+    public function level() {
+        return $this->track->level();
+    }
+    
     public function difficulty(){
         return $this->belongsTo(Difficulty::class);
     }
