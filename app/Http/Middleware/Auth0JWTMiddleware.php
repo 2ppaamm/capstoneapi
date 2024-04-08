@@ -17,7 +17,7 @@ class Auth0JWTMiddleware {
 
         // Get the encrypted user JWT
         $authorizationHeader = $request->header("Authorization");
-        $encUser = str_replace('Bearer ', '', $authorizationHeader);
+      $encUser = str_replace('Bearer ', '', $authorizationHeader);
         if (trim($encUser) == '') {
             return \Response::make("Unauthorized user", 401);
         }
@@ -25,7 +25,7 @@ class Auth0JWTMiddleware {
             $jwtUser = $auth0->decodeJWT($encUser);
         }
         catch(CoreException $e) {
-            return \Response::make("Unauthorized user", 401);
+            return $e;//\Response::make("Unauthorized user", 401);
         }
         catch(Exception $e) {
             echo $e;exit;

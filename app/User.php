@@ -159,7 +159,7 @@ class User extends Model implements AuthenticatableContract,
     }
 
     public function validEnrolment($courseid){
-        return $this->enrolment()->whereRoleId(Role::where('role', 'LIKE', '%Student')->pluck('id'))->whereIn('house_id', House::whereIn('course_id', $courseid)->pluck('id'))->where('expiry_date','>=', new DateTime('today'))->get();
+        return $this->enrolment;//()->whereRoleId(Role::where('role', 'LIKE', '%Student')->pluck('id'))->whereIn('house_id', House::whereIn('course_id', $courseid)->pluck('id'))->where('expiry_date','>=', new DateTime('today'))->get();
     }
 
     public function validHouse(){
