@@ -19,7 +19,8 @@ return array(
     |   As set in the auth0 administration page
     |
     */
-     'client_id'     => 'eVJv6UFM9GVdukBWiURczRCxmb6iaUYG',
+    'client_id'     => 'x0AAlKqaQ8Zw6YF4kdMzTE08oAXjIhGJ',
+    //  'client_id'     => 'eVJv6UFM9GVdukBWiURczRCxmb6iaUYG',
 //     'client_id'     => 'bs3jSKz2Ewrye8dD2qRVrD0Tra2tOqHC',
 
     /*
@@ -72,5 +73,7 @@ return array(
     |
     */
      'api_identifier'  => 'https://mathapi.allgifted.com',
+    
+     'supported_algs' => [ 'RS256' ],
 
 );
