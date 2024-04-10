@@ -90,8 +90,7 @@ class VisitorController extends Controller
 	}
 
 	public function mastercode(StoreMasterCodeRequest $request) {
-		return Auth::user();
-	    DB::beginTransaction();
+		DB::beginTransaction();
 	    try {
 	        $user = Auth::user();
 	        $enrollmentDetails = $this->validateAndEnrollUser($request, $user);
