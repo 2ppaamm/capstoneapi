@@ -69,7 +69,9 @@ class DiagnosticController extends Controller
                     //return $user->completedskills()->with('tracks')->get();
         //$completedskills = Skill_Track::whereIn('skill_id', $user->completedskills()->pluck('skill_id'))->get();
         $skills = Skill_Track::whereIn('track_id', $housetracks->pluck('track_id'))->get();
-        return response()->json(['tracks' => $tracksData, 'skills' => $skills, 'continuetrigger' => count($user->incompletetests),  'user' => $user, 'code' => 200], 200);
+        return response()->json(['tracks' => $tracksData, 
+            //'continuetrigger' => count($user->incompletetests),
+            'user' => $user, 'code' => 200], 200);
     }
 
     /**
@@ -255,6 +257,13 @@ class DiagnosticController extends Controller
             }
 
             $correctness = $question->correctness($user, $answer[$key]);
+            $earnedKudos = ($correctness == FALSE) ? 1 : $question->difficult_id + 1;
+            // Get the current kudos from the pivot
+            $currentKudos = $test->users()->where('user_id', $user->id)->first()->pivot->kudos ?? 0;
+
+            // Update the pivot with the new kudos value
+            $test->users()->updateExistingPivot($user->id, ['kudos' => $currentKudos + $kudosToAdd]);
+
             $answered = $question->answered($user, $correctness, $test, $quiz); // update question_user
             $track = $question->skill->tracks()->first(); // change logic, take the first track
 

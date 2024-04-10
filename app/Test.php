@@ -29,7 +29,7 @@ class Test extends Model
     }
 
     public function users(){
-        return $this->belongsToMany(User::class, 'question_user')->withPivot('correct','question_answered','answered_date', 'attempts', 'question_id')->withTimestamps();
+        return $this->belongsToMany(User::class, 'question_user')->withPivot('correct','question_answered','answered_date', 'attempts', 'question_id','kudos')->withTimestamps();
     }
 
     public function testee(){
@@ -72,14 +72,101 @@ class Test extends Model
         return count($this->questions()->get()) ? number_format($this->questions()->sum('correct')/count($this->questions()->get()) * 100, 2, '.', '') : 0;
     }
 
+    protected function initializeLevel($user){
+        // Initialize start with level 2 and then move up
+        $this->level_id = (!$this->level_id) ? 2 : intdiv($user->maxile_level, 100);
+        $this->save();
+        return Level::find($this->level_id);
+    }
+
+    protected function getDiagnosticQuestionsbyLevel($user, $level){
+        // Load the level with question from every tracks and every skill randomly
+
+        $levelQuestions = collect([]);
+
+        // Iterate through each track and their skills to randomly pick one question
+        foreach ($level->tracks as $track) {
+            foreach ($track->skills as $skill) {
+                // Check if there are questions available for the skill
+                if ($skill->questions->isNotEmpty()) {
+                    // Select a random question
+                    $skillQuestion = $skill->questions->random(); 
+
+                    // Store the question as required
+                    $levelQuestions->push($skillQuestion);
+                }
+            }
+        }
+
+        return $levelQuestions;
+    }
+
+    protected function getAdaptiveQuestions($user, $level){
+        $questionsPerTest = Config::get('app.questions_per_test') - 1;
+        $numToField=Config::get('app.questions_per_quiz');
+        $unansweredQuestions = $test->uncompletedQuestions;
+
+        // 1. Get skills that the user attempted but did not pass
+        if (count($unansweredQuestions) < $numToField ){
+            $unpassedQuestions = Question::whereSkillId($user->skilluser()->wherePivot('skill_passed', false)->pluck('id'))->take($numToField - count($unansweredQuestions))->get();
+        }
+
+        // 2. Get unattempted skills
+        if (count($unansweredQuestions) + count($unpassedQuestions) < $numToField){
+            $houseIds = $user->validEnrolment(Course::where('course', 'LIKE', '%Math%')->pluck('house_id'));
+            $trackIds = House_Track::whereIn('house_id', $houseIds)->pluck('track_id');
+            $skillIds = Skill_Track::whereIn('track_id', $trackIds)->pluck('skill_id');
+            $unattemptedQuestions = Question::whereIn('skill_id', $skillIds) ->inRandomOrder()->take($numToField - count($unansweredQuestions) - count($unpassedQuestions))->get();
+        }
+
+        return $additionalQuestions = $unpassedQuestions->merge($unattemptedQuestions);
+    }
+
+
     public function fieldQuestions($user){
+        $level = null;
+        $currentQuestions = $this->questions;
+        $newQuestions = collect([]);
+        $message = '';
+        $questionPerTest = Config::get('app.questions_per_test') - 1;
+        $numToField=Config::get('app.questions_per_quiz');
+
+        $level = $this->initializeLevel($user)->id;
+
+        /* when to get new questions
+         * 1. When you run out of question and max level not reached
+         *  a. Diagnostic Test: find level questions
+         *  b. Standard Test: questionPerQuiz not reached, find questions from   unpassed then unattempted skills
+         */
+
+        if (count($this->uncompletedQuestions) && $level < 6) {
+            $newQuestions = (($this->diagnostic) ? 
+                    getDiagnosticQuestionsbyLevel($user, $level) : 
+                        (count($currentQuestions) < $questionPerTest)) ? 
+                            $this->getAdaptiveQuestions($user, $level) :
+                            null;
+        } 
+        if ($newQuestions) {
+            $currentQuestions = $currentQuestions->merge($newQuestions);
+            foreach ($newQuestions as $question) {
+            $question->assigned($user, $test);
+            }
+        }
+
+        $fieldQuestions = $this->uncompletedQuestions()->take($numToField)->get();//()->with('skill.tracks')->get();
+        return response()->json(['message' => 'Request executed successfully', 'test' => $this->id, 'questions' => $fieldQuestions, 'code' => 201]);
+    }
+
+
+ /*   public function fieldQuestions($user){
         $level = null;
         $questions = collect([]);
         $message = '';
         if (!count($this->uncompletedQuestions)) {    // no more questions
             if ($this->diagnostic) {             // if diagnostic check new level, get qns
-                $stop_test = $this->diagnostic_error()->whereCorrect(FALSE)->count()>=5 ? True : False; //check if user is testing below 
-                $this->level_id =  (!count($this->questions) || !$this->level_id) ? 2 : $this->level_id+1;
+//                $stop_test = $this->diagnostic_error()->whereCorrect(FALSE)->count()>=5 ? True : False; //check if user is testing below 
+                //Initiate level
+return                $this->level_id =  (!count($this->questions) || !$this->level_id) ? 2: $this->level_id;
                 $this->save();
 
                 try {
@@ -170,7 +257,7 @@ class Test extends Model
 
         return response()->json(['message' => 'Request executed successfully', 'test'=>$this->id, 'questions'=>$test_questions, 'code'=>201]);
     }
-
+*/
     public function fieldDiagnosticQuestions($course) {
         $randomQuestions = collect();
 
@@ -183,8 +270,8 @@ class Test extends Model
 
             // Fetch one random question from any of these skills
             $randomQuestion = Question::whereIn('skill_id', $skillIds)
-                                      ->inRandomOrder() // Order by random
-                                      ->first(); // Take the first one after randomizing
+                ->inRandomOrder() // Order by random
+                ->first(); // Take the first one after randomizing
 
             if ($randomQuestion) {
                 $randomQuestions->push($randomQuestion);
@@ -198,8 +285,8 @@ class Test extends Model
         $attempts = $this->attempts($user->id);
         $attempts = $attempts ? $attempts->attempts : 0;
         $maxile = $user->calculateUserMaxile($this);
-        $user->enrolclass($maxile);                          //enrol in class of maxile reached
-        $kudos_earned = $this->questions()->sum('correct');
+        $user->enrolclass($maxile);                    //enrol in class of maxile reached
+        $kudos_earned = optional($this->users()->where('user_id', $userId)->first()->pivot)->kudos ?? 0;
         $user->game_level = $user->game_level + $kudos_earned;  // add kudos
         $user->diagnostic = FALSE;
         $user->save();                                          //save maxile and game results

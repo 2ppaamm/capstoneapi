@@ -53,8 +53,7 @@ class FieldTrackQuestionController extends Controller
         } else {
     // If there's an existing incomplete test, use the latest one
             $questions = $test->questions;
-
-            // Supplement questions to meet the required count if necessary
+        // Supplement questions to meet the required count if necessary
             if ($questions->count() < $questions_per_test) {
                 $questionsNeeded = $questions_per_test - $questions->count();
                 // Make sure to close the parenthesis correctly in the min() function call
@@ -71,12 +70,12 @@ class FieldTrackQuestionController extends Controller
         $levelQuestionsRequired = $questions_per_test - count($questions);
 
              // Fetch additional questions from the same level, excluding already selected questions
-        $levelQuestions = $levelQuestionsRequired? Question::whereHas('track', function($query) use ($levelId) {
-                $query->where('level_id', $levelId);
-            })
-            ->whereNotIn('id', $questions->pluck('id')) // Assuming $questions is a collection
-            ->take($levelQuestionsRequired)
-            ->get(): collect([]);
+        $levelQuestions = $levelQuestionsRequired > 0? Question::whereHas('skill.tracks', function ($query) use ($levelId) {
+            $query->where('level_id', $levelId);
+        })
+        ->whereNotIn('id', $questions->pluck('id')) // Assuming $questions is a collection
+        ->take($levelQuestionsRequired)
+        ->get() : collect([]);
 
         $additionalQuestions = collect($additionalQuestions)->merge($levelQuestions); // Update the questions collection to include the new level additions      
         foreach ($additionalQuestions as $question) {
@@ -93,7 +92,9 @@ class FieldTrackQuestionController extends Controller
             $query->where('question_user.test_id', $testId)
                   ->where('question_user.user_id', $userId)
                   ->where('question_user.question_answered', false);
-        })->get();
+        })
+        ->with('skill')
+        ->get();
 
         $fieldQuestions=(count($unansweredQuestions))> $num_to_field ? $unansweredQuestions->take($num_to_field) : $unansweredQuestions;
 

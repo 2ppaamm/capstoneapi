@@ -95,7 +95,7 @@ class User extends Model implements AuthenticatableContract,
     }
 
     public function skillspassed(){
-        return $this->skilluser()->wherePivot('skill_passed','=',TRUE);
+        return $this->skilluser()->wherePivot('skill_passed','=',TRUE)->get();
     }
 
     public function storefieldmaxile($maxile, $field_id){
@@ -159,7 +159,7 @@ class User extends Model implements AuthenticatableContract,
     }
 
     public function validEnrolment($courseid){
-        return $this->enrolment;//()->whereRoleId(Role::where('role', 'LIKE', '%Student')->pluck('id'))->whereIn('house_id', House::whereIn('course_id', $courseid)->pluck('id'))->where('expiry_date','>=', new DateTime('today'))->get();
+        return $this->enrolment()->whereRoleId(Role::where('role', 'LIKE', '%Student')->pluck('id'))->whereIn('house_id', House::whereIn('course_id', $courseid)->pluck('id'))->where('expiry_date','>=', new DateTime('today'))->get();
     }
 
     public function validHouse(){
@@ -210,7 +210,7 @@ class User extends Model implements AuthenticatableContract,
     }
 
     public function tests(){
-        return $this->belongsToMany(Test::class)->withPivot('test_completed','completed_date', 'result', 'attempts')->withTimestamps();
+        return $this->belongsToMany(Test::class)->withPivot('test_completed','completed_date', 'result', 'attempts','kudos')->withTimestamps();
     }
 
     public function incompletetests() {

@@ -19,7 +19,7 @@ return array(
     |   As set in the auth0 administration page
     |
     */
-     'client_id'     => 'eVJv6UFM9GVdukBWiURczRCxmb6iaUYG',
+     'client_id'     => 'x0AAlKqaQ8Zw6YF4kdMzTE08oAXjIhGJ',
 //     'client_id'     => 'bs3jSKz2Ewrye8dD2qRVrD0Tra2tOqHC',
 
     /*
@@ -29,7 +29,7 @@ return array(
     |   As set in the auth0 administration page
     |
     */
-     'client_secret' => '5KuhcAgVdBEaaa6SjwEapxoDg13DGYRoDYyLE9xX59A6YUUdqn9a6Hz0zwQCNdfa',
+     'client_secret' => '0ypbEEyAjhBYCjT0_DjO0c_fsTzcsU2zvObRLojrn2Ebq4r0M_dGl9e8vfe0Fay5',
 //     'client_secret' => 'qb0mNnZVLMt1Q8mxVhxdTQDpx1FAYkeg3AsaztRI89IcqUgZoyOsNxQ3-jhnpNbb',
    /*
     |--------------------------------------------------------------------------
@@ -72,5 +72,5 @@ return array(
     |
     */
      'api_identifier'  => 'https://mathapi.allgifted.com',
-
+     'supported_algs' => [ 'RS256' ],
 );
