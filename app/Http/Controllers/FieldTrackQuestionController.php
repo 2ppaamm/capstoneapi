@@ -35,7 +35,8 @@ class FieldTrackQuestionController extends Controller
 
         // 3. Handling new/incomplete test creation or selection
         $test = $user->incompletetests()->where('test', 'LIKE', '%' . $track->track . ' tracktest%')->latest()->first();
-        if (!$test) {
+
+        if (!$test || !(count($test->uncompletedQuestions))) {
             // Create a new test if there's no existing incomplete track test
             $test = $user->tests()->create([
                 'test' => $user->name."'s ".$track->track." tracktest",
@@ -47,7 +48,6 @@ class FieldTrackQuestionController extends Controller
             ]);
 
             // Find Config::get('app.questions_per_test') questions from (1) minus (2)
-
             $additionalQuestions = $allQuestions->whereNotIn('id', $correctQuestions->pluck('id'))->take($questions_per_test);
 
         } else {

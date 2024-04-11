@@ -239,30 +239,32 @@ class DiagnosticController extends Controller
         if (!$test && !$quiz){
             return response()->json(['message' => 'Invalid Test/Quiz', 'code'=>405], 405);    
         }
-        
+        $questions = Question::findMany($request->question_id);
+        $missingQuestions = array_diff($request->question_id, $questions->pluck('id')->toArray());
+
+        if (!empty($missingQuestions)) {
+            $user->errorlogs()->create(['error'=>'Questions not in database.']);
+            return response()->json(['message'=>'Error in question. No such question', 'code'=>403]); 
+        }
+        $retrievedQuestionIDs = $test->questions()->pluck('id')->toArray();
+        $missingQuestionIds = array_diff($request->question_id, $retrievedQuestionIDs);
+        if (!empty($missingQuestionIds)) {
+            $user->errorlogs()->create(['error'=>'Questions not assigned to user'. $user->name]);
+            return response()->json(['message'=>'Question not assigned to '. $user->name, 'code'=>403]);
+        }
+
         foreach ($request->question_id as $key=>$question_id) {
             $question = Question::find($question_id);
-            $answer = $request->answer;
-            if (!$question){
-                $user->errorlogs()->create(['error'=>'Question '.$question_id.' not found']);
-                return response()->json(['message'=>'Error in question. No such question', 'code'=>403]);                
-            }
-            
-            if ($request->test_id) {
-                $assigned = $question->tests()->whereTestId($test->id)->first();
-                if (!$assigned) {
-                    $user->errorlogs()->create(['error'=>'Question '.$question_id.' not assigned to '. $user->name]);
-                    return response()->json(['message'=>'Question not assigned to '. $user->name, 'code'=>403]);
-                }                                
-            }
+            $correctness = $question->correctness($user, $request->answer[$key]);
+            $kudosToAdd = (!$correctness) ? 1 : $question->difficulty_id + 1;
 
-            $correctness = $question->correctness($user, $answer[$key]);
-            $kudosToAdd = ($correctness == FALSE) ? 1 : $question->difficult_id + 1;
             // Get the current kudos from the pivot
-            $currentKudos = $test->users()->where('user_id', $user->id)->first()->pivot->kudos ?? 0;
+            $currentTestKudos = $test->testee()->first()->pivot->kudos ?? 0;
+
+            $totalTestKudos = $currentTestKudos + $kudosToAdd;
 
             // Update the pivot with the new kudos value
-            $test->users()->updateExistingPivot($user->id, ['kudos' => $currentKudos + $kudosToAdd]);
+            $test->testee()->updateExistingPivot($user->id, ['kudos' => $totalTestKudos]);
 
             $answered = $question->answered($user, $correctness, $test, $quiz); // update question_user
             $track = $question->skill->tracks()->first(); // change logic, take the first track
@@ -279,14 +281,13 @@ class DiagnosticController extends Controller
                 $track_percentile=$track->storeDoneNess($user);
 
                 // find the class
-                if (!$test->diagnostic) {
-                    $house = $track->houses->intersect(\App\House::whereIn('id', Enrolment:: whereUserId($user->id)->whereRoleId(6)->pluck('house_id'))->get())->first();
+  /*              if (!$test->diagnostic) {->pluck('house_id'))->get())->first();
                     if ($house) {
                         $enrolment = Enrolment:: whereUserId($user->id)->whereRoleId(6)->whereHouseId($house-> id)->first();
                         $enrolment['progress'] = round($user->tracksPassed->intersect(\App\House::find(1)->tracks)->avg('level_id')*100);
                         $enrolment->save();
                     }
-                }
+                }*/
             }
         }
 

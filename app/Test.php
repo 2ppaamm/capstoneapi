@@ -33,7 +33,7 @@ class Test extends Model
     }
 
     public function testee(){
-        return $this->belongsToMany(User::class, 'test_user')->withPivot('test_completed', 'completed_date', 'result', 'attempts')->withTimestamps();
+        return $this->belongsToMany(User::class, 'test_user')->withPivot('test_completed', 'completed_date', 'result', 'attempts', 'kudos')->withTimestamps();
     }
 
     public function tester(){
@@ -69,12 +69,13 @@ class Test extends Model
     }
 
     public function markTest($userid){
-        return count($this->questions()->get()) ? number_format($this->questions()->sum('correct')/count($this->questions()->get()) * 100, 2, '.', '') : 0;
+        return (count($this->questions)) ? number_format($this->questions()->sum('correct')/(count($this->questions)) * 100, 2, '.', '') : 0;
     }
 
     protected function initializeLevel($user){
         // Initialize start with level 2 and then move up
-        $this->level_id = (!$this->level_id) ? 2 : intdiv($user->maxile_level, 100);
+        $level = (($this->level_id) ? $this->level_id :(intdiv($user->maxile_level,100))) ? intdiv($user->maxile_level,100) : 2;
+        $this->level_id = $level;
         $this->save();
         return Level::find($this->level_id);
     }
@@ -127,35 +128,46 @@ class Test extends Model
         $level = null;
         $currentQuestions = $this->questions;
         $newQuestions = collect([]);
+        $fieldQuestions = collect([]);
         $message = '';
-        $questionPerTest = Config::get('app.questions_per_test') - 1;
+        $questionsPerTest = Config::get('app.questions_per_test') - 1;
         $numToField=Config::get('app.questions_per_quiz');
 
-        $level = $this->initializeLevel($user)->id;
-
+        if (count($this->uncompletedQuestions) >= $questionsPerTest) {
+            $fieldQuestions = $this->uncompletedQuestions;
+        } else {
+            $level = $this->initializeLevel($user)->id;
         /* when to get new questions
          * 1. When you run out of question and max level not reached
          *  a. Diagnostic Test: find level questions
          *  b. Standard Test: questionPerQuiz not reached, find questions from   unpassed then unattempted skills
          */
-
-        if (count($this->uncompletedQuestions) && $level < 6) {
-            $newQuestions = (($this->diagnostic) ? 
-                    getDiagnosticQuestionsbyLevel($user, $level) : 
-                        (count($currentQuestions) < $questionPerTest)) ? 
-                            $this->getAdaptiveQuestions($user, $level) :
-                            null;
-        } 
-        if ($newQuestions) {
-            $currentQuestions = $currentQuestions->merge($newQuestions);
-            foreach ($newQuestions as $question) {
-            $question->assigned($user, $test);
+      
+            if ($level < 6) {
+                $newQuestions = (($this->diagnostic) ? 
+                        getDiagnosticQuestionsbyLevel($user, $level) : 
+                            (count($currentQuestions) < $questionsPerTest)) ? 
+                                $this->getAdaptiveQuestions($user, $level) :
+                                null;
+            } 
+            if ($newQuestions) {
+                $currentQuestions = $currentQuestions->merge($newQuestions);
+                foreach ($newQuestions as $question) {
+                $question->assigned($user, $test);
+                }
             }
+
+            $fieldQuestions = $this->uncompletedQuestions()->take($numToField)->get();//()->with('skill.tracks')->get();
+
+            if (count($fieldQuestions) < 1) {
+                $message = "Test Completed, no more questions.";
+                $complete = $this->completeTest($message, $user);
+            }    
         }
 
-        $fieldQuestions = $this->uncompletedQuestions()->take($numToField)->get();//()->with('skill.tracks')->get();
-        return response()->json(['message' => 'Request executed successfully', 'test' => $this->id, 'questions' => $fieldQuestions, 'code' => 201]);
+        return response()->json(['message' => 'New Questions Fielded', 'test' => $this->id, 'questions' => $fieldQuestions, 'code' => 201]);
     }
+
 
 
  /*   public function fieldQuestions($user){
@@ -285,19 +297,13 @@ return                $this->level_id =  (!count($this->questions) || !$this->le
         $attempts = $this->attempts($user->id);
         $attempts = $attempts ? $attempts->attempts : 0;
         $maxile = $user->calculateUserMaxile($this);
-        $user->enrolclass($maxile);                    //enrol in class of maxile reached
-        $kudos_earned = optional($this->users()->where('user_id', $userId)->first()->pivot)->kudos ?? 0;
+        $user->enrolclass($maxile); //enrol in class of maxile reached
+        $kudos_earned = $this->testee()->first()->pivot->kudos;
         $user->game_level = $user->game_level + $kudos_earned;  // add kudos
         $user->diagnostic = FALSE;
-        $user->save();                                          //save maxile and game results
+        $user->save();  
+        //save maxile and game results
         $this->testee()->sync([$user->id=>['test_completed'=>TRUE, 'completed_date'=>new DateTime('now'), 'result'=>$result = $this->markTest($user->id), 'attempts'=> $attempts + 1]]);
-
-       $userTracks = $user->tracks()->get()->map(function ($track) {
-            return [
-                'track_id' => $track->id,
-                'doneNess' => $track->pivot->doneNess,
-            ];
-        }); 
-        return response()->json(['message'=>$message, 'test'=>$this->id, 'percentage'=>$result, 'score'=>$maxile, 'maxile'=> $maxile,'kudos'=>$kudos_earned, 'tracks' => $userTracks,'code'=>206], 206);
+        return response()->json(['message'=>$message, 'test'=>$this->id, 'percentage'=>$result, 'score'=>$maxile, 'maxile'=> $maxile,'kudos'=>$kudos_earned,'code'=>206], 206);
     }
 }
