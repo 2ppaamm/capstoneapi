@@ -257,7 +257,7 @@ class DiagnosticController extends Controller
             }
 
             $correctness = $question->correctness($user, $answer[$key]);
-            $earnedKudos = ($correctness == FALSE) ? 1 : $question->difficult_id + 1;
+            $kudosToAdd = ($correctness == FALSE) ? 1 : $question->difficult_id + 1;
             // Get the current kudos from the pivot
             $currentKudos = $test->users()->where('user_id', $user->id)->first()->pivot->kudos ?? 0;
 
