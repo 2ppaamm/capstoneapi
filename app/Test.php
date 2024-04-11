@@ -124,49 +124,48 @@ class Test extends Model
     }
 
 
-    public function fieldQuestions($user){
+    public function fieldQuestions($user) {
         $level = null;
         $currentQuestions = $this->questions;
         $newQuestions = collect([]);
-        $fieldQuestions = collect([]);
-        $message = '';
         $questionsPerTest = Config::get('app.questions_per_test') - 1;
-        $numToField=Config::get('app.questions_per_quiz');
+        $numToField = Config::get('app.questions_per_quiz');
 
-        if (count($this->uncompletedQuestions) >= $questionsPerTest) {
-            $fieldQuestions = $this->uncompletedQuestions;
-        } else {
+        // Check if more questions are needed.
+        if ($this->uncompletedQuestions()->count() < $numToField) {
             $level = $this->initializeLevel($user)->id;
-        /* when to get new questions
-         * 1. When you run out of question and max level not reached
-         *  a. Diagnostic Test: find level questions
-         *  b. Standard Test: questionPerQuiz not reached, find questions from   unpassed then unattempted skills
-         */
-      
+
             if ($level < 6) {
-                $newQuestions = (($this->diagnostic) ? 
-                        getDiagnosticQuestionsbyLevel($user, $level) : 
-                            (count($currentQuestions) < $questionsPerTest)) ? 
-                                $this->getAdaptiveQuestions($user, $level) :
-                                null;
-            } 
-            if ($newQuestions) {
-                $currentQuestions = $currentQuestions->merge($newQuestions);
-                foreach ($newQuestions as $question) {
-                $question->assigned($user, $test);
+                // Decide how to get new questions based on the test type and current question count.
+                if ($this->diagnostic) {
+                    $newQuestions = $this->getDiagnosticQuestionsbyLevel($user, $level);
+                } elseif ($currentQuestions->count() < $questionsPerTest) {
+                    $newQuestions = $this->getAdaptiveQuestions($user, $level);
+                }
+
+                // Assign new questions if any.
+                if ($newQuestions->isNotEmpty()) {
+                    foreach ($newQuestions as $question) {
+                        $question->assigned($user, $this); // Assuming $this refers to a test instance.
+                    }
+                    $currentQuestions = $currentQuestions->merge($newQuestions);
                 }
             }
-
-            $fieldQuestions = $this->uncompletedQuestions()->take($numToField)->get();//()->with('skill.tracks')->get();
-
-            if (count($fieldQuestions) < 1) {
-                $message = "Test Completed, no more questions.";
-                $complete = $this->completeTest($message, $user);
-            }    
         }
 
-        return response()->json(['message' => 'New Questions Fielded', 'test' => $this->id, 'questions' => $fieldQuestions, 'code' => 201]);
+        // Attempt to field new or remaining questions.
+        $fieldQuestions = $this->uncompletedQuestions()->take($numToField)->get();
+
+        // Decide to complete the test or continue based on available questions.
+        if ($fieldQuestions->isEmpty()) {
+            $message = "Test Completed, no more questions.";
+            return $this->completeTest($message, $user);
+//            return response()->json(['message' => $message, 'code' => 206]); 
+        } else {    
+            return response()->json(['message' => 'New Questions Fielded', 'test' => $this->id, 'questions' => $fieldQuestions, 'code' => 201]);
+        }
     }
+
 
 
 
