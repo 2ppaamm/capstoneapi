@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use DateTime;
 use Config;
 use App\Question;
-
+use App\Jobs\ProcessQuestionAssignment;
 
 class Test extends Model
 {
@@ -132,42 +132,35 @@ class Test extends Model
     public function fieldQuestions($user) {
         $level = null;
         $currentQuestions = $this->questions;
-        $newQuestions = collect([]);
+        $newQuestions = null;
+        $fieldQuestions = null;
         $questionsPerTest = Config::get('app.questions_per_test') - 1;
         $numToField = Config::get('app.questions_per_quiz');
-
+        $unansweredQuestions = $this->uncompletedQuestions;
         // Check if more questions are needed.
-        if ($this->uncompletedQuestions()->count() < $numToField) {
+        if (count($unansweredQuestions) < $numToField) {
             $level = $this->initializeLevel($user)->id;
 
-            if ($level < 6) {
-                // Decide how to get new questions based on the test type and current question count.
-                if ($this->diagnostic) {
-                    $newQuestions = $this->getDiagnosticQuestionsbyLevel($user, Level::find($level));
-                } elseif ($currentQuestions->count() < $questionsPerTest) {
-                    $newQuestions = $this->getAdaptiveQuestions($user, $level);
-                }
-
-                // Assign new questions if any.
-                if ($newQuestions->isNotEmpty()) {
-                    foreach ($newQuestions as $question) {
-                        $question->assigned($user, $this); // Assuming $this refers to a test instance.
-                    }
-                    $currentQuestions = $currentQuestions->merge($newQuestions);
-                }
+            if ($this->diagnostic) {
+                $newQuestions = $this->getDiagnosticQuestionsbyLevel($user, Level::find($level));
+            } else {
+                $newQuestions = $this->getAdaptiveQuestions($user, $level);
+            }
+            // Assign new questions if any.
+            if ($newQuestions->isNotEmpty()) {     
+                $unansweredQuestions = $unansweredQuestions->merge($newQuestions);
+                ProcessQuestionAssignment::dispatch($newQuestions->pluck('id'), $this->id, $user->id);
             }
         }
-
-        // Attempt to field new or remaining questions.
-        $fieldQuestions = $this->uncompletedQuestions()->take($numToField)->get();
-
-        // Decide to complete the test or continue based on available questions.
+        $fieldQuestions = $unansweredQuestions->take($numToField);
         if ($fieldQuestions->isEmpty()) {
             $message = "Test Completed, no more questions.";
             return $this->completeTest($message, $user);
-//            return response()->json(['message' => $message, 'code' => 206]); 
-        } else {    
-            return response()->json(['message' => 'New Questions Fielded', 'test' => $this->id, 'questions' => $fieldQuestions, 'code' => 201]);
+        } else {
+            return [
+                'test' => $this->id,
+                'questions' => $fieldQuestions
+            ];
         }
     }
 
@@ -308,6 +301,7 @@ return                $this->level_id =  (!count($this->questions) || !$this->le
         $user->save();  
         //save maxile and game results
         $this->testee()->sync([$user->id=>['test_completed'=>TRUE, 'completed_date'=>new DateTime('now'), 'result'=>$result = $this->markTest($user->id), 'attempts'=> $attempts + 1]]);
+
         return response()->json(['message'=>$message, 'test'=>$this->id, 'percentage'=>$result, 'score'=>$maxile, 'maxile'=> $maxile,'kudos'=>$kudos_earned,'code'=>206], 206);
     }
 }

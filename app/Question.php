@@ -93,7 +93,7 @@ class Question extends Model
         $test->skills()->sync([$this->skill_id], false);
         $tracks = Skill::find($this->skill_id)->first()->tracks;
         $user->testedTracks()->syncWithoutDetaching($tracks);
-        return $test;
+        return $test->fresh();
     }
 
     /*

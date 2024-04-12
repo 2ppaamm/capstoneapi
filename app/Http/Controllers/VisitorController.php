@@ -15,7 +15,7 @@ use Carbon\Carbon;
 use DateTime;
 use App\Http\Requests\StoreMasterCodeRequest;
 use Illuminate\Support\Facades\DB;
-
+use App\Jobs\ProcessQuestionAssignment;
 
 class VisitorController extends Controller
 {
@@ -50,9 +50,7 @@ class VisitorController extends Controller
 		    // Find the questions for the new diagnostic test
 		    $questions = $test->fieldDiagnosticQuestions(Course::find(1));
 
-		    foreach ($questions as $question) {
-		        $question->assigned($user, $test);
-		    }
+		    ProcessQuestionAssignment::dispatch($questions);
 
 		}
 
