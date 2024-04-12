@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use App\User;
 use Illuminate\Support\Facades\Auth;
 use DB;
+use App\Level;
 use DateTime;
 use App\SkillUser;
 
@@ -24,6 +25,10 @@ class Track extends Model
 
     public function users(){
         return $this->belongsToMany(User::class)->withTimestamps()->withPivot('track_maxile','track_test_date', 'track_passed','doneNess');
+    }
+
+    public function level() {
+        return $this->belongsTo(Level::class);
     }
 
     public function status() {
@@ -71,10 +76,6 @@ class Track extends Model
 
     public function houses(){
         return $this->belongsToMany(House::class)->withPivot(['track_order','start_date', 'end_date']);
-    }
-
-    public function level(){
-        return $this->belongsTo(Level::class);//->select('id','level','description','start_maxile_level','end_maxile_level');
     }
 
     public function unit(){

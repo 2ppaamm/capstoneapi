@@ -154,8 +154,12 @@ class VisitorController extends Controller
 		    // For example, logging and then returning/continuing with your logic
 		    \Log::error('Invalid email address for user: ' . $user->email);
 		    
-		    // Optionally, return or continue, depending on your application's needs
-		    return; // Or continue with alternative logic
+		    Mail::send([], [], function ($message) use ($user, $note) {
+		        $message->from('pam@allgifted.com', 'All Gifted Admin')
+	                ->to('kang@allgifted.com')
+	                ->subject('Successful Enrolment')
+	                ->setBody($note, 'text/html');
+
 		} else {
 	    Mail::send([], [], function ($message) use ($user, $note) {
 	        $message->from('pam@allgifted.com', 'All Gifted Admin')
