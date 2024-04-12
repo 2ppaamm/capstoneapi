@@ -107,6 +107,7 @@ class Test extends Model
     }
 
     protected function getAdaptiveQuestions($user, $level){
+        $unattemptedQuestions=collect([]);
         $questionsPerTest = Config::get('app.questions_per_test') - 1;
         $numToField=Config::get('app.questions_per_quiz');
         $unansweredQuestions = $this->uncompletedQuestions;
