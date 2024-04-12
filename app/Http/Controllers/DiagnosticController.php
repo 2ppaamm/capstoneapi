@@ -359,7 +359,6 @@ class DiagnosticController extends Controller
 
         //return !$quiz ? $test->fieldQuestions($user): $quiz->fieldQuestions($user, $house);
         $testData = $test->fieldQuestions($this->user);
-        return $testData;
         return response()->json([
             'message' => 'New Questions Fielded',
             'test' => $testData['test'] ?? null,

@@ -158,13 +158,15 @@ class VisitorController extends Controller
 	                ->subject('Successful Enrolment')
 	                ->setBody($note, 'text/html');
 
+			}
 		} else {
 	    Mail::send([], [], function ($message) use ($user, $note) {
 	        $message->from('pam@allgifted.com', 'All Gifted Admin')
 	                ->to($user->email)->cc('kang@allgifted.com')
 	                ->subject('Successful Enrolment')
 	                ->setBody($note, 'text/html');
-	    }});
+	    }
+	});
 
 	}
 }
