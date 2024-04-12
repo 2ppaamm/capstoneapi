@@ -142,7 +142,7 @@ class Test extends Model
             if ($level < 6) {
                 // Decide how to get new questions based on the test type and current question count.
                 if ($this->diagnostic) {
-                    $newQuestions = $this->getDiagnosticQuestionsbyLevel($user, $level);
+                    $newQuestions = $this->getDiagnosticQuestionsbyLevel($user, Level::find($level));
                 } elseif ($currentQuestions->count() < $questionsPerTest) {
                     $newQuestions = $this->getAdaptiveQuestions($user, $level);
                 }
