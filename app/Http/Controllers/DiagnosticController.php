@@ -85,6 +85,7 @@ class DiagnosticController extends Controller
         $allreadycourses = Course::where('course','LIKE','%AllReady%')->pluck('id'); //all ready course id
         $quiz=[];
         $new_test= new Test;
+        $new_test->save();
         $user = Auth::user();
         $enrolled = $user->validEnrolment($courses); //all math courses enrolled in
         $allreadyenrolled = $user->validEnrolment($allreadycourses); //allready enrolled

@@ -109,7 +109,7 @@ class Test extends Model
     protected function getAdaptiveQuestions($user, $level){
         $questionsPerTest = Config::get('app.questions_per_test') - 1;
         $numToField=Config::get('app.questions_per_quiz');
-        $unansweredQuestions = $test->uncompletedQuestions;
+        $unansweredQuestions = $this->uncompletedQuestions;
 
         // 1. Get skills that the user attempted but did not pass
         if (count($unansweredQuestions) < $numToField ){
