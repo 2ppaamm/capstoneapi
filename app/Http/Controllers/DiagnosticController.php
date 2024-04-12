@@ -89,7 +89,7 @@ class DiagnosticController extends Controller
         $allreadyenrolled = $user->validEnrolment($allreadycourses); //allready enrolled
 
         if (!count($enrolled)) return response()->json(['message'=>'Not properly enrolled or first time user', 'code'=>203]);
-        $house = \App\House::findOrFail($enrolled->last()->house_id);
+            $house = \App\House::findOrFail($enrolled->last()->house_id);
 
         // If enrolled
         if (count($allreadyenrolled)>0) {   
@@ -119,7 +119,7 @@ class DiagnosticController extends Controller
                 if (count($user->incompletequizzes) > 0) {
                     $quiz = $user->incompletequizzes()->first();
                 }
-             } 
+            } 
             //if there's a house quiz and $diagnostic
             //   if there's incompleted quiz, $quiz = incomplete quiz
             //   else create new quiz
@@ -146,27 +146,27 @@ class DiagnosticController extends Controller
 
             return $new_quiz->fieldQuestions($user, $house);                // output quiz questions
         } else {
+            //not allready
             //return "test";
             // FOR TESTS NOT QUIZ
-            $diagnostic = count($user->tests)<1 || $user->diagnostic || $type == 'test' ? TRUE : FALSE;
-            $test_name = $diagnostic ? $house->house : $user->name;
+            $diagnostic = count($user->tests)<1 || $user->diagnostic || $type == 'random' ? TRUE : FALSE;
+            $test_name = $diagnostic ? $user->name.' diagnostic ' : $user->name.' standard ';
             if (!$diagnostic){
-                if (count($user->incompletetests) > 0) {
-                    $new_test = $user->incompletetests()->first();
+                $regularIncompleteTests = $user->incompletetests()->where('test', 'not like', '%tracktest%')->where('test', 'not like', '%diagnostic%')->where('diagnostic',FALSE)->get();
+                if (count($regularIncompleteTests) > 0) {
+                    $new_test = $user->incompletetests()->latest()->first();
                 } 
             } else {
-                $diagnostictests = (count($user->diagnostictests)>0) ? $user->diagnostictests()->first() : null;
+                $diagnostictests = (count($user->diagnostictests)>0) ? $user->diagnostictests()->latest()->first() : null;
                 $user->diagnostictests()->detach($diagnostictests);
                 //$diagnostictests->questions()->detach();
-                $new_test = $user->tests()->create(['test'=>$test_name."'s ".date("m/d/Y")." Test",'description'=> $test_name."'s ".date("m/d/Y")." Test", 'start_available_time'=> date('Y-m-d', strtotime('-1 day')), 'end_available_time'=>date('Y-m-d', strtotime('+1 month')),'diagnostic'=>$diagnostic]);
+                $new_test = $user->tests()->create(['test'=>$test_name.date("m/d/Y")." Test",'description'=> $test_name.date("m/d/Y")." Test", 'start_available_time'=> date('Y-m-d', strtotime('-1 day')), 'end_available_time'=>date('Y-m-d', strtotime('+1 month')),'diagnostic'=>$diagnostic]);
                 //$diagnostictests ? $diagnostictests->delete():null;
             }
             $new_test->testee()->sync([$user->id], false);
-            $fieldedquestions = (($new_test->fieldQuestions($user))); //Generate questions
+            return $fieldedquestions = (($new_test->fieldQuestions($user))); //Generate questions
            // $fieldedquestionstracks = Skill_Track::whereIn('skill_id', $fieldedquestions->select('skill_id'))->get();
 
-            //return json_last_error();
-            return ($fieldedquestions);
 
             // ONLY GET TRACKS WHICH USE THE SKILLS IN THE QUESTION LIST
             /*
