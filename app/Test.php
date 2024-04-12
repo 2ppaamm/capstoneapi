@@ -73,11 +73,15 @@ class Test extends Model
     }
 
     protected function initializeLevel($user){
-        // Initialize start with level 2 and then move up
-        $level = (($this->level_id) ? $this->level_id :(intdiv($user->maxile_level,100))) ? intdiv($user->maxile_level,100) : 2;
+        // If $this->level_id is not set or zero, calculate from maxile_level; otherwise use existing $this->level_id
+        $level = $this->level_id ?: (intdiv($user->maxile_level, 100) ?: 2);
         $this->level_id = $level;
+        if (!Level::find($level)) {
+            // Handle the case where no corresponding level exists
+            throw new \Exception("Level with ID {$level} does not exist.");
+        }
         $this->save();
-        return Level::find($this->level_id);
+        return Level::find($level);
     }
 
     protected function getDiagnosticQuestionsbyLevel($user, $level){
