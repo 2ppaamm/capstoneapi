@@ -72,5 +72,5 @@ return array(
     |
     */
      'api_identifier'  => 'https://mathapi.allgifted.com',
-     'supported_algs' => [ 'RS256' ],
+     'supported_algs' => [ 'RS256', 'HS256' ],
 );
