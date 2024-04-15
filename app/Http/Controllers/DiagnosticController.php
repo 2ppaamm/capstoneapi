@@ -63,7 +63,7 @@ class DiagnosticController extends Controller
             return response()->json(['message' => "", 'code'=>203], 203);                        
         }
         $housetracks = House_Track::whereIn('house_id', Enrolment:: whereUserId($this->user->id)->pluck('house_id'))->get();
-        $tracks=Track::with('skills')->whereIn('id', $housetracks->pluck('track_id'))->select('description', 'id', 'image')->get();
+        $tracks=Track::with('skills')->whereIn('id', $housetracks->pluck('track_id'))->select('description', 'id', 'level_id','image')->get();
         $tracksData = $tracks->map(function ($track) {
             return [
                 'id' => $track->id,

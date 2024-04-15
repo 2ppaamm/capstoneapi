@@ -48,7 +48,7 @@ class VisitorController extends Controller
 			    'status_id' => 2,
 			]);
 		    // Find the questions for the new diagnostic test
-		    $questions = $test->fieldDiagnosticQuestions(Course::find(1));
+  		    $questions = $test->fieldDiagnosticQuestions(Course::find(1));
 
 		    ProcessQuestionAssignment::dispatch($questions->pluck('id'), $test->id, $user->id);
             $uncompletedQuestions = $randomQuestions;
