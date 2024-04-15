@@ -56,14 +56,22 @@ class DiagnosticController extends Controller
     public function login(){
         $courses = Course::where('course', 'LIKE', '%Math%')->pluck('id'); //any math course id
         $quiz=[];
+        $code = null;
+        $message = null;
+        $tracks = null;
         $enrolled = $this->user->validEnrolment($courses); //all math courses enrolled in
 
-        if (!count($enrolled)) return response()->json(['message'=>'Not properly enrolled or first time user', 'code'=>203]);
-        if (!$enrolled){
-            return response()->json(['message' => "", 'code'=>203], 203);                        
+        if (!count($enrolled) || !$enrolled) {
+            $tracks =  Course::findOrFail(1)->tracks;
+            $code = 203;
+            $message = "Not enrolled";
+        } else { 
+            $housetracks = House_Track::whereIn('house_id', Enrolment:: whereUserId($this->user->id)->pluck('house_id'))->get();
+            $tracks=Track::with('skills')->whereIn('id', $housetracks->pluck('track_id'))->select('description', 'id', 'level_id','image')->get();
+            $code = 201;
+            $message = "Valid Enrolment";
         }
-        $housetracks = House_Track::whereIn('house_id', Enrolment:: whereUserId($this->user->id)->pluck('house_id'))->get();
-        $tracks=Track::with('skills')->whereIn('id', $housetracks->pluck('track_id'))->select('description', 'id', 'level_id','image')->get();
+
         $tracksData = $tracks->map(function ($track) {
             return [
                 'id' => $track->id,
@@ -73,12 +81,9 @@ class DiagnosticController extends Controller
                 'doneNess' => $track->pivot ? $track->pivot->doneNess : null,
             ];
         });
-                    //return $user->completedskills()->with('tracks')->get();
-        //$completedskills = Skill_Track::whereIn('skill_id', $user->completedskills()->pluck('skill_id'))->get();
-        $skills = Skill_Track::whereIn('track_id', $housetracks->pluck('track_id'))->get();
-        return response()->json(['tracks' => $tracksData, 
-            //'continuetrigger' => count($user->incompletetests),
-            'user' => $this->user, 'code' => 200], 200);
+
+        $skills = Skill_Track::whereIn('track_id', $tracks->pluck('track_id'))->get();
+        return response()->json(['message'=>$message, 'tracks' => $tracksData, 'user' => $this->user, 'code' => $code], $code);
     }
 
     /**
@@ -98,7 +103,7 @@ class DiagnosticController extends Controller
         $new_test->save();
         $enrolled = $this->user->validEnrolment($courses); //all math courses enrolled in
 
-        if (!count($enrolled)) return response()->json(['message'=>'Not properly enrolled or first time user', 'code'=>203]);
+        if (!count($enrolled)) return response()->json(['message'=>'Not properly enrolled or first time user',  'code'=>203]);
 
         $house = \App\House::findOrFail($enrolled->last()->house_id);
 
