@@ -59,28 +59,22 @@ class DiagnosticController extends Controller
         $code = null;
         $message = null;
         $tracks = null;
+        $housetracks=null;
         $enrolled = $this->user->validEnrolment($courses); //all math courses enrolled in
-
-        if (!count($enrolled) || !$enrolled) {
+        if (count($enrolled) < 1 || !$enrolled) {
             $tracks =  Course::findOrFail(1)->tracks;
             $code = 203;
             $message = "Not enrolled";
         } else { 
             $housetracks = House_Track::whereIn('house_id', Enrolment:: whereUserId($this->user->id)->pluck('house_id'))->get();
-            $tracks=Track::with('skills')->whereIn('id', $housetracks->pluck('track_id'))->select('description', 'id', 'level_id','image')->get();
+            $tracks=Track::whereIn('id', $housetracks->pluck('track_id'))->get();
             $code = 201;
             $message = "Valid Enrolment";
         }
 
-        $tracksData = $tracks->map(function ($track) {
-            return [
-                'id' => $track->id,
-                'description' => $track->description,
-                'image' => $track->image,
-                'level'=>$track->level_id,
-                'doneNess' => $track->pivot ? $track->pivot->doneNess : null,
-            ];
-        });
+        $tracksData = Track::with(['skills', 'users' => function ($query) {
+            $query->where('users.id', $this->user->id)->withPivot('doneNess');
+            }])->whereIn('id', $tracks->pluck('id'))->get();
 
         $skills = Skill_Track::whereIn('track_id', $tracks->pluck('track_id'))->get();
         return response()->json(['message'=>$message, 'tracks' => $tracksData, 'user' => $this->user, 'code' => $code], $code);
