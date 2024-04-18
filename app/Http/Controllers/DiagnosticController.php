@@ -76,7 +76,7 @@ class DiagnosticController extends Controller
             $query->where('users.id', $this->user->id)->withPivot('doneNess');
             }])->whereIn('id', $tracks->pluck('id'))->get();
 
-        $skills = Skill_Track::whereIn('track_id', $tracks->pluck('track_id'))->get();
+         $skills = Skill_Track::whereIn('track_id', $tracks->pluck('track_id'))->get();
         return response()->json(['message'=>$message, 'tracks' => $tracksData, 'user' => $this->user, 'code' => $code], $code);
     }
 
