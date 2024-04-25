@@ -72,11 +72,16 @@ class DiagnosticController extends Controller
             $message = "Valid Enrolment";
         }
 
-        $tracksData = Track::with(['skills', 'users' => function ($query) {
-            $query->where('users.id', $this->user->id)->withPivot('doneNess');
-            }])->whereIn('id', $tracks->pluck('id'))->get();
+        $tracksData = Track::with([
+            'skills' => function ($query) {
+                $query->select('skills.*'); // Select only the columns from skills table
+            },
+            'users' => function ($query) {
+                $query->where('users.id', $this->user->id)->withPivot('doneNess');
+            }
+        ])->whereIn('id', $tracks->pluck('id'))->get();
 
-         $skills = Skill_Track::whereIn('track_id', $tracks->pluck('track_id'))->get();
+        //$skills = Skill_Track::whereIn('track_id', $tracks->pluck('track_id'))->get();
         return response()->json(['message'=>$message, 'tracks' => $tracksData, 'user' => $this->user, 'code' => $code], $code);
     }
 
