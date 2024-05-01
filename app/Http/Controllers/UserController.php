@@ -28,7 +28,7 @@ class UserController extends Controller
     public function index()
     {
         $user = Auth::user();        
-        return $user->is_admin ? response()->json(User::with('enrolledClasses.roles', 'logs')->get()): response()->json(['message' =>'not authorized to view users', 'code'=>401], 401);
+        return $user->is_admin ? response()->json(User::with('enrolledClasses.roles', 'logs')->get()): response()->json(['message' =>'No admin, not authorized to view users', 'code'=>401], 401);
     }
 
     /**

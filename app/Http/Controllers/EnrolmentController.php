@@ -87,21 +87,39 @@ class EnrolmentController extends Controller
      */
     public function user_houses() {
         $user = Auth::user();
-        $houses = $user->studentHouse()->with(['tracks.checkedSkills.skill_maxile','tracks.checkedSkills.links','tracks.track_passed'])->get();
+
+        $query = $user->is_admin ? House::query() : $user->studentHouse();
+
+        $houses = $query->with([
+            'tracks.checkedSkills.skill_maxile',
+            'tracks.checkedSkills.links',
+            'tracks.track_passed',
+            'course',
+            'tracks.skills'
+        ])->get();
+
+        // Pre-fetch necessary data for calculations
+        $tracksPassedIds = $user->tracksPassed->pluck('id');
+        $userSkillsPassed = $user->skill_user()->whereSkillPassed(true)->pluck('skill_id');
 
         foreach ($houses as $house) {
-          $house['course_maxile'] = (int)min($user->maxile_level,$house->course->end_maxile_score);//Enrolment::whereUserId($user->id)->whereHouseId($house->id)->whereRoleId(6)->pluck('progress')->first();
-          $house['accuracy'] = $user->accuracy();
-          $house['tracks_passed'] = count($house->tracks->intersect($user->tracksPassed));
-          $house['total_tracks'] = count($house->tracks);
-          $house['skill_passed'] = count(\App\Skill::whereIn('id', \App\Skill_Track::whereIn('track_id',$house->tracks()->pluck('id'))->pluck('skill_id'))->get()->intersect($user->skill_user()->whereSkillPassed(TRUE)->get()));
-          $house['total_skills'] = count(\App\Skill_track::whereIn('track_id', $house->tracks()->pluck('id'))->get());
-          $house['radarChartLabels'] = $user->fields->pluck('field');
-          $house['radarChartData'] = [['data'=> $house['radarChartLabels']? \App\FieldUser::whereUserId($user->id)->orderBy('field_id')->pluck('field_maxile'):0, 'label'=>'Field Maxile']];
-          $house['target_score'] = $house->course()->pluck('end_maxile_score')->first(); 
+            $house['course_maxile'] = (int)min($user->maxile_level, $house->course->end_maxile_score);
+            $house['accuracy'] = $user->accuracy();
+            $house['tracks_passed'] = $house->tracks->pluck('id')->intersect($tracksPassedIds)->count();
+            $house['total_tracks'] = $house->tracks->count();
+            $house['skill_passed'] = $house->tracks->pluck('skills')->flatten()->pluck('id')->intersect($userSkillsPassed)->count();
+            $house['total_skills'] = $house->tracks->pluck('skills')->flatten()->count();
+            $house['radarChartLabels'] = $user->fields->pluck('field');
+            $house['radarChartData'] = [['data' => $house['radarChartLabels'] ? \App\FieldUser::whereUserId($user->id)->orderBy('field_id')->pluck('field_maxile') : 0, 'label' => 'Field Maxile']];
+            $house['target_score'] = $house->course->end_maxile_score; 
         }
 
-        return response()->json(['message' =>'Successful retrieval of enrolment.', 'houses'=>$houses, 'code'=>201], 201);
+        return response()->json([
+            'message' => 'Successful retrieval of enrolment.',
+            'houses' => $houses,
+            'code' => 201
+        ], 201);
+
     }
     
     /**
@@ -124,7 +142,7 @@ class EnrolmentController extends Controller
             $class['students_completed_course'] = $class->studentEnrolment->where('expiry_date','<', new DateTime('today'))->count();         
             $class['chartdata']=[$class->studentEnrolment()->where('progress','<', $class->underperform)->count(),$class->studentEnrolment()->where('progress','>=', $class->underperform)->where('progress', '<',$class->overperform)->whereRoleId(6)->count(),$class->studentEnrolment()->where('progress','>=', $class->overperform)->count()];
             $class['tracksdata'] = $class->tracks()->pluck('track');
-//            $class['barchartdata'] = [['data'=> \App\TrackUser::whereIn('track_id', House::find(1)->tracks()->pluck('id'))->whereIn('user_id', House::find(1)->enrolledStudents()->pluck('id'))->avg('track_maxile') ? \App\TrackUser::whereIn('track_id', House::find(1)->tracks()->pluck('id'))->whereIn('user_id', House::find(1)->enrolledStudents()->pluck('id'))->avg('track_maxile'):0 , 'label'=>'Average Maxile']];
+
         }
 
         return response()->json(['message' =>'Successful retrieval of teacher enrolment.', 'houses'=>$houses, 'code'=>201], 201);
