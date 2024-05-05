@@ -154,9 +154,7 @@ return [
         Illuminate\Session\SessionServiceProvider::class,
         Illuminate\Translation\TranslationServiceProvider::class,
         Illuminate\Validation\ValidationServiceProvider::class,
-        Illuminate\View\ViewServiceProvider::class,
-        Auth0\Login\LoginServiceProvider::class,
-        Barryvdh\Cors\ServiceProvider::class,
+        Illuminate\View\ViewServiceProvider::class,        
         /*
          * Application Service Providers...
          */
@@ -210,7 +208,7 @@ return [
         'URL'       => Illuminate\Support\Facades\URL::class,
         'Validator' => Illuminate\Support\Facades\Validator::class,
         'View'      => Illuminate\Support\Facades\View::class,
-        'Auth0'     => Auth0\Login\Facade\Auth0::class,
+        'Auth0'     => Auth0\Laravel\Facade\Auth0::class,
         'bindings' => \Illuminate\Routing\Middleware\SubstituteBindings::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
 

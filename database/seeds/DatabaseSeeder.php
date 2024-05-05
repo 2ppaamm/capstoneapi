@@ -16,16 +16,16 @@ class DatabaseSeeder extends Seeder
     {
         Model::unguard();
 
-//            $this->call(UsersSeeder::class);
-  //          $this->call(StatusSeeder::class);
-    //        $this->call(TypeSeeder::class);
-      //      $this->call(DifficultySeeder::class);
-        //    $this->call(RoleSeeder::class);
-          //  $this->call(FieldSeeder::class);
-            //$this->call(UnitSeeder::class);
-  //          $this->call(ResultTypeSeeder::class);
-//            $this->call(FrameworkSeeder::class);
-//            $this->call(HouseSkillSeeder::class);
+           $this->call(UsersSeeder::class);
+           $this->call(StatusSeeder::class);
+           $this->call(TypeSeeder::class);
+           $this->call(DifficultySeeder::class);
+           $this->call(RoleSeeder::class);
+           $this->call(FieldSeeder::class);
+            $this->call(UnitSeeder::class);
+           $this->call(ResultTypeSeeder::class);
+           $this->call(FrameworkSeeder::class);
+           $this->call(HouseSkillSeeder::class);
             $this->call(QuizSeeder::class);
 
         Model::reguard();

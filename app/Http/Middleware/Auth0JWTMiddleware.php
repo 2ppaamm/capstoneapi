@@ -1,37 +1,18 @@
 <?php 
 
 namespace App\Http\Middleware;
-use Auth0\Login\Contract\Auth0UserRepository;
-use Auth0\SDK\Exception\CoreException;
+use Auth0\Laravel\Facade\Auth0;
 use App\User;
 
 class Auth0JWTMiddleware {
-    protected $userRepository;
-
-    public function __construct(Auth0UserRepository $userRepository) {
-        $this->userRepository = $userRepository;
-    }
     public function handle($request, \Closure $next)
     {
-        $auth0 = \App::make('auth0');
-
-        // Get the encrypted user JWT
-        $authorizationHeader = $request->header("Authorization");
-      $encUser = str_replace('Bearer ', '', $authorizationHeader);
-        if (trim($encUser) == '') {
+        if (!auth()->check()) {
             return \Response::make("Unauthorized user", 401);
         }
-        try {
-            $jwtUser = $auth0->decodeJWT($encUser);
-        }
-        catch(CoreException $e) {
-            return $e;//\Response::make("Unauthorized user", 401);
-        }
-        catch(Exception $e) {
-            echo $e;exit;
-        }
-        // if it does not represent a valid user, return a HTTP 401
-        $user = $this->userRepository->getUserByDecodedJWT($jwtUser);
+            
+        $user = auth()->user();
+        
         if (!$user) {
             return \Response::make("Unauthorized user", 401);
         }

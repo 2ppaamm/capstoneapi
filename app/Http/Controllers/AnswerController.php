@@ -15,7 +15,6 @@ use DB;
 class AnswerController extends Controller
 {
     public function __construct(){
-        $this->middleware('auth0.jwt');
         $currentuser =  \App\User::whereId(3)->first();
                 \Auth::login($currentuser);
     }
