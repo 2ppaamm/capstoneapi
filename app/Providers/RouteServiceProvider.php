@@ -54,9 +54,7 @@ class RouteServiceProvider extends ServiceProvider
     {
         Route::group([
             'middleware' => ['auth0.jwt', 'throttle:60,1','bindings'],
-//            'middleware' => ['throttle:60,1','bindings'],
             'namespace' => $this->namespace,
-   //         'prefix' => 'api',
         ], function ($router) {
             require base_path('routes/api.php');
         });

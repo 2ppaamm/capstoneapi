@@ -26,8 +26,8 @@ class QuizSeeder extends Seeder
                 'start_available_time' => date('Y-m-d H:i:s', time()),
                 'end_available_time' => date('Y-m-d H:i:s', time()),
                 'due_time' => date('Y-m-d H:i:s', time()),
-                'number_of_tries_allowed' => 0,
-                'which_result' => $faker->sentence,
+                // 'number_of_tries_allowed' => 0,
+                // 'which_result' => $faker->sentence,
                 'status_id' => 1,
             ]);
 
@@ -49,25 +49,25 @@ class QuizSeeder extends Seeder
                 'course_id' => $courseId,
                 'image' => $faker->imageUrl(),
                 'status_id' => 1,
-                'price' => 1,
+                // 'price' => 1,
                 'start_date' => date('Y-m-d', time()),
                 'end_date' => date('Y-m-d', time()),
-                'currency' => $faker->name,
-                'underperform' => 1,
-                'overperform' => 1,
+                // 'currency' => $faker->name,
+                // 'underperform' => 1,
+                // 'overperform' => 1,
                 'framework_id' => 1,
-                'start_framework' => 1,
-                'end_framework' => 1,
+                // 'start_framework' => 1,
+                // 'end_framework' => 1,
             ]);
 
             DB::table('house_quiz')->insertGetId([
                 'house_id' => $houseId,
                 'quiz_id' => $quizId,
-                'start_date' => date('Y-m-d', time()),
-                'end_date' => date('Y-m-d', time()),
-                'result' => 1,
-                'attempts' => 0,
-                'which_attempt' => 0,
+                // 'start_date' => date('Y-m-d', time()),
+                // 'end_date' => date('Y-m-d', time()),
+                // 'result' => 1,
+                // 'attempts' => 0,
+                // 'which_attempt' => 0,
             ]);
 
             $skillId = DB::table('skills')->insertGetId([
@@ -77,7 +77,7 @@ class QuizSeeder extends Seeder
                 'image' => $faker->imageUrl(),
                 'lesson_link' => $faker->imageUrl(),
                 'status_id' => 1,
-                'check' => 1,
+                // 'check' => 1,
                 'track_id' => 1,
             ]);
 
@@ -110,8 +110,8 @@ class QuizSeeder extends Seeder
             DB::table('question_quiz')->insertGetId([
                 'question_id' => $questionId,
                 'quiz_id' => $quizId,
-                'correct' => 1,
-                'date_answered' => date('Y-m-d', time()),
+                // 'correct' => 1,
+                // 'date_answered' => date('Y-m-d', time()),
             ]);
 
 
