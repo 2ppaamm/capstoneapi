@@ -3,7 +3,6 @@
 namespace App;
 
 use App\Role;
-use App\User;
 use App\Quiz;
 use DB;
 use Auth;
@@ -37,7 +36,7 @@ class User extends Model implements AuthenticatableContract,
      *
      * @var array
      */
-    protected $fillable = ['name','firstname', 'lastname', 'email','image', 'maxile_level', 'game_level','mastercode','contact', 'password', 'is_admin', 'date_of_birth'];
+    protected $fillable = ['auth0','name','firstname', 'lastname', 'email','email_verified','image', 'maxile_level', 'game_level','mastercode','contact', 'password', 'is_admin', 'date_of_birth'];
 
     /**
      * The attributes excluded from the model's JSON form.
@@ -48,6 +47,10 @@ class User extends Model implements AuthenticatableContract,
 
     // make dates carbon so that carbon google that out
     protected $dates = ['date_of_birth', 'last_test_date', 'next_test_date'];
+
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+    ];
 
     // relationships
     public function mastercodes(){

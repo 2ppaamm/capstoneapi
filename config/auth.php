@@ -69,7 +69,10 @@ return [
             'driver' => 'eloquent',
     //        'model' => App\User::class,
         ],
-
+        'auth0-provider' => [
+            'driver' => 'auth0.provider',
+            'repository' => \App\Repositories\UserRepository::class,
+          ],
         // 'users' => [
         //     'driver' => 'database',
         //     'table' => 'users',
