@@ -8,7 +8,7 @@ class Auth0JWTMiddleware {
     public function handle($request, \Closure $next)
     {
         if (!auth()->check()) {
-            return \Response::make("Unauthorized user", 401);
+            return \Response::make("Unauthorized user. Wrong Token", 401);
         }
             
         $user = auth()->user();

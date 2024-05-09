@@ -1,0 +1,10 @@
+{
+    "id": "663c85d2d23a178b086ad9e7",
+    "name": "Math API",
+    "identifier": "https://github.com/auth0/laravel-auth0",
+    "signing_alg": "RS256",
+    "allow_offline_access": true,
+    "token_lifetime": 86400,
+    "token_lifetime_for_web": 7200,
+    "skip_consent_for_verifiable_first_party_clients": false
+}

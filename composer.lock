@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a5739ad04e4ca2e0f1c2b26ccc792851",
+    "content-hash": "7bf56f4b80e9a3d6d9f2a613bdaf83cf",
     "packages": [
         {
             "name": "auth0/auth0-php",
@@ -9173,5 +9173,5 @@
         "php": "^8.2"
     },
     "platform-dev": [],
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.3.0"
 }
