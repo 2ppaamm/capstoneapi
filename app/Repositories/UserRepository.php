@@ -32,7 +32,13 @@ final class UserRepository extends UserRepositoryAbstract implements UserReposit
         if (null === $identifier) {
             return null;
         }
-        return User::where('auth0', $identifier)->first();
+
+        $currentuser = User::updateOrCreate(['email'=>$user['email']],[
+            'auth0' => $user['sub'],
+            'image' => $user['picture'] ?? '',
+        ]);
+
+        return $currentuser;
     }
 
     public function fromSession(array $user): ?Authenticatable
