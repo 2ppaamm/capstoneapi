@@ -27,7 +27,7 @@ class VisitorController extends Controller
         $courses = Course::where('course', 'LIKE', '%Math%')->pluck('id'); 	    
 		$user->tests;
 	    if ($user->tests()->exists()) {
-	    	if ($user->diagnostictests()){
+	    	if ($user->diagnostictests->isnotempty()){
 	    		$test= $user->diagnostictests()->latest()->first();
 	    		$questions=$test->uncompletedquestions;
 	    	} else {
