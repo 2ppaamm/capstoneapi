@@ -26,7 +26,6 @@ final class UserRepository extends UserRepositoryAbstract implements UserReposit
                 "scope" => "read write",
             ];
         */
-
         $identifier = $user['sub'] ?? $user['auth0'] ?? null;
 
         if (null === $identifier) {
