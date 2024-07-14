@@ -88,7 +88,7 @@ class VisitorController extends Controller
         DB::beginTransaction();
         try {
             $user = Auth::user();
-     return       $enrolmentDetails = $this->validateAndEnrollUser($request, $user);
+            $enrolmentDetails = $this->validateAndEnrollUser($request, $user);
             $this->updateUserDetails($request, $user);
             $this->sendConfirmationEmail($user, $enrolmentDetails['enrolment']);
             DB::commit();
