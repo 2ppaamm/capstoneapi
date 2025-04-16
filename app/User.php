@@ -2,6 +2,7 @@
 
 namespace App;
 
+use Laravel\Sanctum\HasApiTokens;
 use App\Role;
 use App\Quiz;
 use DB;
@@ -22,7 +23,7 @@ class User extends Model implements AuthenticatableContract,
                                     AuthorizableContract,
                                     CanResetPasswordContract
 {
-    use Authenticatable, Authorizable, CanResetPassword, HasRoles, RecordLog;
+    use Authenticatable, Authorizable, CanResetPassword, HasRoles, RecordLog, HasApiTokens;
 
 
     /**
@@ -36,7 +37,7 @@ class User extends Model implements AuthenticatableContract,
      *
      * @var array
      */
-    protected $fillable = ['auth0','name','firstname', 'lastname', 'email','email_verified','image', 'maxile_level', 'game_level','mastercode','contact', 'password', 'is_admin', 'date_of_birth'];
+    protected $fillable = ['auth0','name','firstname', 'lastname', 'email','email_verified','image', 'maxile_level', 'game_level','mastercode','contact', 'password', 'is_admin', 'phone_number','date_of_birth'];
 
     /**
      * The attributes excluded from the model's JSON form.

@@ -12,6 +12,7 @@ use Auth;
 use App\Http\Requests\GameScoreRequest;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Http\JsonResponse;
 
 class UserController extends Controller
 {
@@ -25,10 +26,19 @@ class UserController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(): JsonResponse
     {
-        $user = Auth::user();        
-        return $user->is_admin ? response()->json(User::with('enrolledClasses.roles', 'logs')->get()): response()->json(['message' =>'No admin, not authorized to view users', 'code'=>401], 401);
+         $user = Auth::guard('sanctum')->user();
+        if (!$user || !$user->is_admin) {
+            return response()->json([
+                'message' => 'Unauthorized: Admin access required.',
+                'code' => 401,
+            ], 401);
+        }
+
+        $users = User::with(['enrolledClasses.roles', 'logs'])->get();
+
+        return response()->json($users);
     }
 
     /**

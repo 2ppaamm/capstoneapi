@@ -42,8 +42,12 @@ return [
         ],
 
         'api' => [
-            'driver' => 'token',
+            'driver' => 'sanctum',
             'provider' => 'users',
+        ],
+        'sanctum' => [
+        'driver' => 'sanctum',
+        'provider' => 'users',
         ],
     ],
 
@@ -67,7 +71,7 @@ return [
     'providers' => [
         'users' => [
             'driver' => 'eloquent',
-    //        'model' => App\User::class,
+            'model' => App\User::class,
         ],
         'auth0-provider' => [
             'driver' => 'auth0.provider',

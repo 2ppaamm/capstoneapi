@@ -1,80 +1,95 @@
 <?php
-use Illuminate\Http\Request;
+
+use App\Http\Controllers\OTPController;
 use App\Http\Controllers\VisitorController;
+use App\Http\Controllers\Auth\AuthController;
+use Illuminate\Http\Request;
 
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-| 
-*/
-/*
- * Quiz
- */
+// === Public Routes (No Token Required) ===
+Route::prefix('auth')->group(function () {
+    Route::post('/request-otp', [OTPController::class, 'requestOtp']);
+    Route::post('/verify-otp', [OTPController::class, 'verifyOtp']);
+});
 
-Route::resource('quizzes', 'QuizController');
-Route::post('/quizzes/{quiz}/copy', 'QuizController@copy');
-Route::get('/quizzes/create', 'QuizController@create');
-Route::resource('quizzes.houses', 'QuizHouseController');
-Route::delete('quizzes/{quiz}/houses','QuizHouseController@deleteHouses');
-Route::resource('quizzes.skills', 'QuizSkillController');
-Route::delete('quizzes/{quiz}/skills','QuizSkillController@deleteSkills');
-Route::post('/quizzes/{quiz}/generate', 'QuizSkillController@generateQuiz');
+// === Protected Routes (Require Sanctum Token) ===
+Route::middleware('auth:sanctum')->group(function () {
 
-Route::resource('/', 'DashboardController');
+    // Dashboard & QA
+    Route::get('/protected', [App\Http\Controllers\DashboardController::class, 'index']);
+    Route::post('/qa', [App\Http\Controllers\CheckAnswerController::class, 'index']);
+    Route::post('/qa/answer', [App\Http\Controllers\CheckAnswerController::class, 'answer']);
 
-Route::post('/qa', 'CheckAnswerController@index');
-Route::post('/qa/answer', 'CheckAnswerController@answer');
-Route::get('/api/protected', 'DashboardController@index');
-Route::resource('users', 'UserController');
-Route::get('/users/{user}/reset','UserController@reset');
-Route::get('/users/{user}/performance', 'UserController@performance');
-Route::post('/users/{user}/diagnostic', 'UserController@diagnostic');
-Route::get('/users/{user}/report', 'DiagnosticController@report');
-Route::post('courses/{courses}', 'CourseController@copy');
-Route::get('questions/search_init', 'QuestionController@search_init');
-Route::post('questions/search', 'QuestionController@search');
-Route::resource('courses', 'CourseController');
-Route::resource('difficulties', 'DifficultyController');
-Route::resource('fields', 'FieldController');
-Route::resource('houses', 'HouseController');
-//Route::resource('videos', 'VideoController', ['except' =>['create', 'edit']]);
-Route::resource('levels', 'LevelController', ['except' =>['create', 'edit']]);
-Route::resource('permissions', 'PermissionController', ['except' =>['create', 'edit']]);
-Route::resource('roles', 'RoleController', ['except' =>['create', 'edit']]);
-Route::resource('units', 'UnitController', ['except' =>['create', 'edit']]);
-Route::resource('courses.houses', 'CourseHouseController', ['except' => ['edit', 'create']]);
-Route::resource('courses.users', 'CourseUserController', ['except' => ['edit', 'create']]);
-Route::resource('houses.users', 'HouseUserController', ['except' => ['edit', 'create']]);
-Route::resource('courses.tracks', 'CourseTrackController', ['except' => ['edit', 'create']]);
-Route::delete('houses/{house}/tracks','HouseTrackController@deleteAll');
-Route::resource('houses.tracks', 'HouseTrackController', ['except' => ['create']]);
-Route::resource('users.tests', 'UserTestController', ['except' => ['edit', 'create']]);
-Route::resource('tracks', 'TrackController', ['except' =>['edit']]);
-Route::resource('tests', 'TestController', ['except' =>['create', 'edit']]);
-Route::resource('types', 'TypeController');
-Route::post('skills/{skills}/copy', 'SkillController@copy');
-Route::get('skills/{skills}/passed','SkillController@usersPassed');
-Route::post('skills/search', 'SkillController@search');
-Route::get('skills/{skill}/tracks', 'TrackSkillController@list_tracks');
-Route::delete('skills/{skill}/tracks', 'TrackSkillController@deleteTracks');
-Route::resource('skills', 'SkillController', ['except' =>['edit']]);
-Route::resource('questions', 'QuestionController', ['except' =>['edit']]);
-Route::resource('enrolments', 'EnrolmentController');
-Route::resource('skills.questions', 'SkillQuestionsController', ['except' => ['edit', 'create']]);
-Route::resource('tracks.questions', 'TrackQuestionsController', ['except' => ['edit']]);
-Route::delete('tracks/{track}/skills','TrackSkillController@deleteSkills');
-Route::resource('tracks.skills', 'TrackSkillController', ['except' => ['edit', 'create']]);
-Route::get('/enrols/users', 'EnrolmentController@user_houses');
-Route::get('/enrols/teachers', 'EnrolmentController@teacher_houses');
+    // Users
+    Route::get('/me', function (Request $request) {
+	    return $request->user(); 
+	});
+    Route::apiResource('users', App\Http\Controllers\UserController::class);
+    Route::get('/users/{user}/reset', [App\Http\Controllers\UserController::class, 'reset']);
+    Route::get('/users/{user}/performance', [App\Http\Controllers\UserController::class, 'performance']);
+    Route::post('/users/{user}/diagnostic', [App\Http\Controllers\UserController::class, 'diagnostic']);
+    Route::get('/users/{user}/report', [App\Http\Controllers\DiagnosticController::class, 'report']);
 
-Route::get('users/{username}/logs','LogController@show');
-Route::get('logs', 'LogController@index');
+    // Courses & Related
+    Route::apiResource('courses', App\Http\Controllers\CourseController::class);
+    Route::post('courses/{course}', [App\Http\Controllers\CourseController::class, 'copy']);
+    Route::apiResource('courses.houses', App\Http\Controllers\CourseHouseController::class);
+    Route::apiResource('courses.users', App\Http\Controllers\CourseUserController::class);
+    Route::apiResource('courses.tracks', App\Http\Controllers\CourseTrackController::class);
 
-Route::post('/test/protected/{type}', 'DiagnosticController@index');
-Route::post('/mastercode', 'VisitorController@mastercode');
-Route::post('/test/answers', 'DiagnosticController@answer');
-Route::post('/loginInfo', 'DiagnosticController@login');
-Route::post('/test/trackquestions/{track}', 'FieldTrackQuestionController@index');
-Route::post('/diagnostic','VisitorController@diagnostic');
-Route::post('/subscribe', 'VisitorController@subscribe');
+    // Quizzes
+    Route::apiResource('quizzes', App\Http\Controllers\QuizController::class);
+    Route::post('/quizzes/{quiz}/copy', [App\Http\Controllers\QuizController::class, 'copy']);
+    Route::get('/quizzes/create', [App\Http\Controllers\QuizController::class, 'create']);
+    Route::apiResource('quizzes.houses', App\Http\Controllers\QuizHouseController::class);
+    Route::apiResource('quizzes.skills', App\Http\Controllers\QuizSkillController::class);
+    Route::post('/quizzes/{quiz}/generate', [App\Http\Controllers\QuizSkillController::class, 'generateQuiz']);
+    Route::delete('quizzes/{quiz}/houses', [App\Http\Controllers\QuizHouseController::class, 'deleteHouses']);
+    Route::delete('quizzes/{quiz}/skills', [App\Http\Controllers\QuizSkillController::class, 'deleteSkills']);
+
+    // Other Resources
+    Route::apiResources([
+        'difficulties'       => App\Http\Controllers\DifficultyController::class,
+        'fields'             => App\Http\Controllers\FieldController::class,
+        'houses'             => App\Http\Controllers\HouseController::class,
+        'levels'             => App\Http\Controllers\LevelController::class,
+        'permissions'        => App\Http\Controllers\PermissionController::class,
+        'roles'              => App\Http\Controllers\RoleController::class,
+        'units'              => App\Http\Controllers\UnitController::class,
+        'tracks'             => App\Http\Controllers\TrackController::class,
+        'tests'              => App\Http\Controllers\TestController::class,
+        'types'              => App\Http\Controllers\TypeController::class,
+        'skills'             => App\Http\Controllers\SkillController::class,
+        'questions'          => App\Http\Controllers\QuestionController::class,
+        'enrolments'         => App\Http\Controllers\EnrolmentController::class,
+        'users.tests'        => App\Http\Controllers\UserTestController::class,
+        'houses.users'       => App\Http\Controllers\HouseUserController::class,
+        'houses.tracks'      => App\Http\Controllers\HouseTrackController::class,
+        'skills.questions'   => App\Http\Controllers\SkillQuestionsController::class,
+        'tracks.questions'   => App\Http\Controllers\TrackQuestionsController::class,
+        'tracks.skills'      => App\Http\Controllers\TrackSkillController::class,
+    ]);
+
+    // Custom Routes
+    Route::post('skills/{skills}/copy', [App\Http\Controllers\SkillController::class, 'copy']);
+    Route::get('skills/{skills}/passed', [App\Http\Controllers\SkillController::class, 'usersPassed']);
+    Route::post('skills/search', [App\Http\Controllers\SkillController::class, 'search']);
+    Route::get('skills/{skill}/tracks', [App\Http\Controllers\TrackSkillController::class, 'list_tracks']);
+    Route::delete('skills/{skill}/tracks', [App\Http\Controllers\TrackSkillController::class, 'deleteTracks']);
+    Route::delete('tracks/{track}/skills', [App\Http\Controllers\TrackSkillController::class, 'deleteSkills']);
+
+    // Logs
+    Route::get('users/{username}/logs', [App\Http\Controllers\LogController::class, 'show']);
+    Route::get('logs', [App\Http\Controllers\LogController::class, 'index']);
+
+    // Diagnostics & Visitors
+    Route::post('/test/protected/{type}', [App\Http\Controllers\DiagnosticController::class, 'index']);
+    Route::post('/test/answers', [App\Http\Controllers\DiagnosticController::class, 'answer']);
+    Route::post('/test/trackquestions/{track}', [App\Http\Controllers\FieldTrackQuestionController::class, 'index']);
+    Route::post('/mastercode', [VisitorController::class, 'mastercode']);
+    Route::post('/diagnostic', [VisitorController::class, 'diagnostic']);
+    Route::post('/su
+    	bscribe', [VisitorController::class, 'subscribe']);
+    Route::post('/loginInfo', [App\Http\Controllers\DiagnosticController::class, 'login']);
+	Route::post('/auth/logout', [AuthController::class, 'logout']);
+	Route::post('/auth/logout-all', [AuthController::class, 'logoutAll']);
+});
