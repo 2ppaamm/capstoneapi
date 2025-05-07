@@ -34,7 +34,7 @@ class DiagnosticController extends Controller
     public function __construct()
     {
         $this->middleware(function ($request, $next) {
-            $this->user = Auth::user();
+            $this->user = Auth::guard('sanctum')->user();
             return $next($request);
         });
     }
@@ -303,72 +303,84 @@ class DiagnosticController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function answer(CreateQuizAnswersRequest $request){
-        $house = \App\House::findOrFail($this->user->enrolledClasses()->latest()->first()->house_id);
-        $quiz = $this->user->quizzes()->latest()->first();
-        $test = Test::find($request->test);
-        if (!$test && !$quiz){
-            return response()->json(['message' => 'Invalid Test/Quiz', 'code'=>405], 405);    
+
+        $user = Auth::guard('sanctum')->user();
+
+//        $house = \App\House::findOrFail($this->user->enrolledClasses()->latest()->first()->house_id);
+//        $quiz = $this->user->quizzes()->latest()->first();
+        $test = Test::findOrFail($request->test);
+
+        // Check if test already completed
+        $pivot = $test->testee()->where('user_id', $user->id)->first()?->pivot;
+        if ($pivot && $pivot->test_completed) {
+            $level = \App\Level::where('start_maxile_level', '<=', $user->maxile_level)
+                ->where('end_maxile_level', '>', $user->maxile_level)
+                ->first();
+
+            $encouragements = $level && $level->encouragements
+                ? explode('|', $level->encouragements)
+                : ['Keep going!', 'Good effort!'];
+
+            $encouragement = $encouragements[array_rand($encouragements)];
+
+            return response()->json([
+                'message' => $encouragement,
+                'game_points' => $pivot->kudos ?? 0,
+                'maxile' => $user->maxile_level,
+                'code' => 206
+            ], 200);
         }
-        $questions = Question::findMany($request->question_id);
-        $missingQuestions = array_diff($request->question_id, $questions->pluck('id')->toArray());
 
-        if (!empty($missingQuestions)) {
-            $this->user->errorlogs()->create(['error'=>'Questions not in database.']);
-            return response()->json(['message'=>'Error in question. No such question', 'code'=>403]); 
+        $submittedIds = $request->question_id;
+        $submittedAnswers = $request->answer;
+
+        // Validate questions belong to test
+        $testQuestionIds = $test->questions()->pluck('id')->toArray();
+        $invalidQuestionIds = array_diff($submittedIds, $testQuestionIds);
+        if (!empty($invalidQuestionIds)) {
+            return response()->json([
+                'message' => 'Some questions are not assigned to this test.',
+                'code' => 403
+            ], 403);
         }
-        $retrievedQuestionIDs = $test->questions()->pluck('id')->toArray();
-        $missingQuestionIds = array_diff($request->question_id, $retrievedQuestionIDs);
-        if (!empty($missingQuestionIds)) {
-            $this->user->errorlogs()->create(['error'=>'Questions not assigned to user'. $this->user->name]);
-            return response()->json(['message'=>'Question not assigned to '. $this->user->name, 'code'=>403]);
-        }
+        foreach ($submittedIds as $i => $questionId) {
+            $question = Question::find($questionId);
+            $answer = $submittedAnswers[$questionId] ?? null;
 
-        foreach ($request->question_id as $key=>$question_id) {
-            $question = Question::find($question_id);
-            $correctness = $question->correctness($this->user, $request->answer[$key]);
-            $kudosToAdd = (!$correctness) ? 1 : $question->difficulty_id + 1;
-
-            // Get the current kudos from the pivot
-            $currentTestKudos = $test->testee()->first()->pivot->kudos ?? 0;
-
-            $totalTestKudos = $currentTestKudos + $kudosToAdd;
-
-            // Update the pivot with the new kudos value
-            $test->testee()->updateExistingPivot($this->user->id, ['kudos' => $totalTestKudos]);
-
-            $answered = $question->answered($this->user, $correctness, $test, $quiz); // update question_user
-            $track = $question->skill->tracks()->first(); // change logic, take the first track
-
-            // calculate and saves maxile at 3 levels: skill, track and user            
-            if ($quiz) {
-                $skill_passed = $question->skill->handleQuiz($this->user, $question, $correctness);
+            if (!$question || $answer === null) {
+                continue;
             }
 
-            if ($test) {
-                $skill_maxile = $question->skill->handleAnswer($this->user->id, $question->difficulty_id, $correctness, $track, $test);
-                $track_maxile = $track->calculateMaxile($this->user, $correctness, $test);
-                $field_maxile = $this->user->storefieldmaxile($track_maxile, $track->field_id);
-                $track_percentile=$track->storeDoneNess($this->user);
+            $correct = $question->correctness($user, $answer);
+            $kudos = $correct ? ($question->difficulty_id + 1) : 1;
 
-                // find the class
-  /*              if (!$test->diagnostic) {->pluck('house_id'))->get())->first();
-                    if ($house) {
-                        $enrolment = Enrolment:: whereUserId($user->id)->whereRoleId(6)->whereHouseId($house-> id)->first();
-                        $enrolment['progress'] = round($user->tracksPassed->intersect(\App\House::find(1)->tracks)->avg('level_id')*100);
-                        $enrolment->save();
-                    }
-                }*/
-            }
+            $currentKudos = $test->testee()->where('user_id', $user->id)->first()?->pivot->kudos ?? 0;
+            $test->testee()->updateExistingPivot($user->id, [
+                'kudos' => $currentKudos + $kudos
+            ]);
+
+            $happy=$question->answered($user, $correct, $test, null);
+
+            $track = $question->skill->tracks()->first();
+            $question->skill->handleAnswer($user->id, $question->difficulty_id, $correct, $track, $test);
+            $track->calculateMaxile($user, $correct, $test);
+            $user->storefieldmaxile($user->maxile_level, $track->field_id);
+            $track->storeDoneNess($user);
         }
 
-        //return !$quiz ? $test->fieldQuestions($user): $quiz->fieldQuestions($user, $house);
-        $testData = $test->fieldQuestions($this->user);
+        // Check again if there are any uncompleted questions
+        if ($test->uncompletedQuestions()->count() === 0) {
+            return $test->completeTest('Test completed.', $user);
+        }
+
+        $next = $test->uncompletedQuestions()->with('skill.tracks.level')->take(5)->get();
+
         return response()->json([
-            'message' => 'New Questions Fielded',
-            'test' => $testData['test'] ?? null,
-            'questions' => $testData['questions'] ?? [],
+            'message' => 'Next batch of questions.',
+            'test' => $test->id ?? null,
+            'questions' => $next ?? [],
             'code' => 201
-        ]);
+        ], 200);
     }
     /**
      * Enrolls a student  

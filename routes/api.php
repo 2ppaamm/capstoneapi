@@ -3,7 +3,24 @@
 use App\Http\Controllers\OTPController;
 use App\Http\Controllers\VisitorController;
 use App\Http\Controllers\Auth\AuthController;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
+
+Route::middleware('auth:sanctum')->get('/me', function (Request $request) {
+    $user = $request->user();
+
+    if (!$user) {
+        return response()->json(['message' => 'Unauthenticated.'], 401);
+    }
+
+    return response()->json([
+        'id' => $user->id,
+        'email' => $user->email,
+        'name' => $user->firstname,
+    ]);
+});
 
 // === Public Routes (No Token Required) ===
 Route::prefix('auth')->group(function () {
@@ -20,14 +37,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/qa/answer', [App\Http\Controllers\CheckAnswerController::class, 'answer']);
 
     // Users
-    Route::get('/me', function (Request $request) {
-	    return $request->user(); 
-	});
     Route::apiResource('users', App\Http\Controllers\UserController::class);
     Route::get('/users/{user}/reset', [App\Http\Controllers\UserController::class, 'reset']);
     Route::get('/users/{user}/performance', [App\Http\Controllers\UserController::class, 'performance']);
     Route::post('/users/{user}/diagnostic', [App\Http\Controllers\UserController::class, 'diagnostic']);
     Route::get('/users/{user}/report', [App\Http\Controllers\DiagnosticController::class, 'report']);
+  	Route::get('/users/subscription/status', [App\Http\Controllers\UserController::class, 'subscriptionStatus']);
 
     // Courses & Related
     Route::apiResource('courses', App\Http\Controllers\CourseController::class);
@@ -84,11 +99,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Diagnostics & Visitors
     Route::post('/test/protected/{type}', [App\Http\Controllers\DiagnosticController::class, 'index']);
     Route::post('/test/answers', [App\Http\Controllers\DiagnosticController::class, 'answer']);
-    Route::post('/test/trackquestions/{track}', [App\Http\Controllers\FieldTrackQuestionController::class, 'index']);
+    Route::get('/test/trackquestions/{track}', [App\Http\Controllers\FieldTrackQuestionController::class, 'index']);
     Route::post('/mastercode', [VisitorController::class, 'mastercode']);
     Route::post('/diagnostic', [VisitorController::class, 'diagnostic']);
-    Route::post('/su
-    	bscribe', [VisitorController::class, 'subscribe']);
+    Route::post('/subscribe', [VisitorController::class, 'subscribe']);
     Route::post('/loginInfo', [App\Http\Controllers\DiagnosticController::class, 'login']);
 	Route::post('/auth/logout', [AuthController::class, 'logout']);
 	Route::post('/auth/logout-all', [AuthController::class, 'logoutAll']);

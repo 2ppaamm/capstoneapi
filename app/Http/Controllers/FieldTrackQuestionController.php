@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Question;
 use Auth;
 use App\Track;
+use App\User;
 use Config;
 
 class FieldTrackQuestionController extends Controller
@@ -15,98 +16,87 @@ class FieldTrackQuestionController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(Track $track)
-    {
-        //to work with React
-        $user = Auth::user();
-        $userId = $user->id;
-        $trackId = $track->id;
-        $questions = collect([]);
-        $fieldQuestions=[];
-        $num_to_field=Config::get('app.questions_per_quiz');
-        $questions_per_test=Config::get('app.questions_per_test') - 1;
-        $additionalQuestions=[];
-        $levelId = $track->level->id;
+  public function index(Track $track)
+  {
+      $user = Auth::guard('sanctum')->user();
+      $test = $this->getOrCreateTest($user, $track);
 
-        // 1. Find a list of all questions in the track.
-        $allQuestions = Question::whereIn('skill_id',  $track->skills()->pluck('id'))->get();
-        // 2. Find all the questions in the track that user has gotten correct=TRUE in the question_user pivot.
-        $correctQuestions = $user->correctquestions()->whereIn('skill_id',  $track->skills()->pluck('id'))->get();
+      $existingQuestions = $test->questions;
+      $correctQuestions = $user->correctquestions()->whereIn('skill_id', $track->skills()->pluck('id'))->pluck('id');
+      $allTrackQuestions = Question::whereIn('skill_id', $track->skills()->pluck('id'))->get();
 
-        // 3. Handling new/incomplete test creation or selection
-        $test = $user->incompletetests()->where('test', 'LIKE', '%' . $track->track . ' tracktest%')->latest()->first();
+      // Fill up to required number of questions
+      $questionsNeeded = Config::get('app.questions_per_test') - $existingQuestions->count();
+      $additional = collect();
 
-        if (!$test || !(count($test->uncompletedQuestions))) {
-            // Create a new test if there's no existing incomplete track test
-            $test = $user->tests()->create([
-                'test' => $user->name."'s ".$track->track." tracktest",
-                'description'=> $user->name."'s ".date("m/d/Y")." ".$track->track." tracktest",
-                'level_id' => $track->level_id,
-                'start_available_time' => date('Y-m-d', strtotime('-1 day')),
-                'end_available_time' => date('Y-m-d', strtotime('+1 year')),
-                'diagnostic' => false
-            ]);
+      if ($questionsNeeded > 0) {
+          $excludedIds = $existingQuestions->pluck('id')->merge($correctQuestions);
+          $moreTrackQuestions = $allTrackQuestions->whereNotIn('id', $excludedIds)->take($questionsNeeded);
+          $additional = $additional->merge($moreTrackQuestions);
+          $questionsNeeded -= $moreTrackQuestions->count();
+      }
 
-            // Find Config::get('app.questions_per_test') questions from (1) minus (2)
-            $additionalQuestions = $allQuestions->whereNotIn('id', $correctQuestions->pluck('id'))->take($questions_per_test);
+      // Pull from same-level if still lacking
+      if ($questionsNeeded > 0) {
+          $sameLevelQuestions = Question::whereHas('skill.tracks', fn($q) => $q->where('level_id', $track->level_id))
+              ->whereNotIn('id', $existingQuestions->pluck('id'))
+              ->take($questionsNeeded)
+              ->get();
 
-        } else {
-    // If there's an existing incomplete test, use the latest one
-            $questions = $test->questions;
-        // Supplement questions to meet the required count if necessary
-            if ($questions->count() < $questions_per_test) {
-                $questionsNeeded = $questions_per_test - $questions->count();
-                // Make sure to close the parenthesis correctly in the min() function call
-                $additionalQuestionsCount = min($questionsNeeded, $allQuestions->count());
+          $additional = $additional->merge($sameLevelQuestions);
+      }
 
-                // Assuming $questions is a collection and can be directly used to filter $allQuestions
-                // Correctly use merge() on a Collection instance and make sure $allQuestions is a Collection of all available questions
-                $additionalQuestions = $allQuestions->whereNotIn('id', $questions->pluck('id')->merge($correctQuestions->pluck('id')))->take($additionalQuestionsCount);
-            }
-        }
+      // Assign all new questions
+      foreach ($additional as $q) {
+          $q->assigned($user, $test);
+      }
 
-        $questions = $questions->merge($additionalQuestions); // Update the questions collection to include the new additions
+      // Fetch unanswered assigned questions
+      $unanswered = Question::whereHas('users', fn($q) =>
+          $q->where('question_user.test_id', $test->id)
+            ->where('question_user.user_id', $user->id)
+            ->where('question_user.question_answered', false))
+          ->with('skill.tracks.level') // for Flutter
+          ->get();
 
-        $levelQuestionsRequired = $questions_per_test - count($questions);
+      $toSend = $unanswered->take(Config::get('app.questions_per_quiz'))->map(function ($q) {
+          $q->skill; // make sure skill is loaded
+          $track = $q->skill->tracks()->first(); // assumes 1 main track
+          $q->level = $track?->level?->name ?? ''; // attach level name
+          return $q;
+      });
 
-             // Fetch additional questions from the same level, excluding already selected questions
-        $levelQuestions = $levelQuestionsRequired > 0? Question::whereHas('skill.tracks', function ($query) use ($levelId) {
-            $query->where('level_id', $levelId);
-        })
-        ->whereNotIn('id', $questions->pluck('id')) // Assuming $questions is a collection
-        ->take($levelQuestionsRequired)
-        ->get() : collect([]);
+      $doneNess = $user->tracks()->where('tracks.id', $track->id)->first()->pivot->doneNess ?? 0;
 
-        $additionalQuestions = collect($additionalQuestions)->merge($levelQuestions); // Update the questions collection to include the new level additions      
-        foreach ($additionalQuestions as $question) {
-            $question->assigned($user, $test);
-        }
+      return response()->json([
+          'message' => 'Request executed successfully',
+          'test' => $test->id,
+          'questions' => $toSend,
+          'track_doneness' => $doneNess,
+          'code' => 201
+      ]);
+  }
 
- // 6. Find the doneNess from the user_track pivot table
+  private function getOrCreateTest($user, $track)
+  {
+      $test = $user->incompletetests()
+          ->where('test', 'LIKE', "%{$track->track} tracktest%")
+          ->latest()
+          ->first();
 
-        $doneNess = $user->tracks()->where('tracks.id', $trackId)->first()->pivot->doneNess ?? 0;
-        
-        $testId = $test->id;
+      if (!$test || !$test->uncompletedQuestions()->count()) {
+          return $user->tests()->create([
+              'test' => "{$user->name}'s {$track->track} tracktest",
+              'description' => "{$user->name}'s " . now()->format('m/d/Y') . " {$track->track} tracktest",
+              'level_id' => $track->level_id,
+              'start_available_time' => now()->subDay(),
+              'end_available_time' => now()->addYear(),
+              'diagnostic' => false
+          ]);
+      }
 
-        $unansweredQuestions = Question::whereHas('users', function ($query) use ($userId, $testId) {
-            $query->where('question_user.test_id', $testId)
-                  ->where('question_user.user_id', $userId)
-                  ->where('question_user.question_answered', false);
-        })
-        ->with('skill')
-        ->get();
-
-        $fieldQuestions=(count($unansweredQuestions))> $num_to_field ? $unansweredQuestions->take($num_to_field) : $unansweredQuestions;
-
-        // Send response
-        return response()->json([
-            'message' => 'Request executed successfully',
-            'test' => $test->id,
-            'questions' => $fieldQuestions,
-            'track_doneness' => $doneNess,
-            'code' => 201
-        ]);
-    }
+      return $test;
+  }
 
 
  /*   public function index(Track $track)

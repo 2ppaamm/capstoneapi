@@ -16,3 +16,10 @@
 //Route::get('/loadall', 'LoadController@loadall');
 //Route::get('/loadquestions', 'LoadQuestions@loadall');
 //Route::get('/loadsecondary', 'LoadSecondary@loadall');
+use Illuminate\Support\Facades\Mail;
+use App\Mail\SendOtpMail;
+
+Route::get('/test-mail', function () {
+    Mail::to('youremail@gmail.com')->send(new SendOtpMail('123456'));
+    return 'Mail sent!';
+});

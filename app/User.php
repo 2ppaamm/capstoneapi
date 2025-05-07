@@ -2,29 +2,29 @@
 
 namespace App;
 
-use Laravel\Sanctum\HasApiTokens;
 use App\Role;
 use App\Quiz;
+use Carbon\Carbon;
+use DateTime;
 use DB;
 use Auth;
-use Illuminate\Auth\Authenticatable;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Auth\Passwords\CanResetPassword;
+use Mail;
+use Config;
+
+use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Foundation\Auth\Access\Authorizable;
+use Illuminate\Auth\Passwords\CanResetPassword;
+use Illuminate\Notifications\Notifiable;
+
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
-use DateTime;
-use Mail;
-use Config;
-use Carbon\Carbon;
 
-class User extends Model implements AuthenticatableContract,
-                                    AuthorizableContract,
-                                    CanResetPasswordContract
+use Laravel\Sanctum\HasApiTokens;
+
+class User extends Authenticatable implements AuthenticatableContract, AuthorizableContract, CanResetPasswordContract
 {
-    use Authenticatable, Authorizable, CanResetPassword, HasRoles, RecordLog, HasApiTokens;
-
+    use HasApiTokens, Notifiable,Authorizable, CanResetPassword, HasRoles, RecordLog;
 
     /**
      * The database table used by the model.
@@ -32,12 +32,17 @@ class User extends Model implements AuthenticatableContract,
      * @var string
      */
     protected $table = 'users';
+
     /**
      * The attributes that are mass assignable.
      *
      * @var array
      */
-    protected $fillable = ['auth0','name','firstname', 'lastname', 'email','email_verified','image', 'maxile_level', 'game_level','mastercode','contact', 'password', 'is_admin', 'phone_number','date_of_birth'];
+    protected $fillable = [
+        'auth0', 'name', 'firstname', 'lastname', 'email', 'email_verified', 'image',
+        'maxile_level', 'game_level', 'mastercode', 'contact', 'password',
+        'is_admin', 'phone_number', 'date_of_birth'
+    ];
 
     /**
      * The attributes excluded from the model's JSON form.
@@ -46,9 +51,18 @@ class User extends Model implements AuthenticatableContract,
      */
     protected $hidden = ['password', 'remember_token', 'created_at'];
 
-    // make dates carbon so that carbon google that out
+    /**
+     * The attributes that should be mutated to dates.
+     *
+     * @var array
+     */
     protected $dates = ['date_of_birth', 'last_test_date', 'next_test_date'];
 
+    /**
+     * The attributes that should be cast to native types.
+     *
+     * @var array
+     */
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
@@ -120,10 +134,11 @@ class User extends Model implements AuthenticatableContract,
     }
 
     // enrolment
-    public function enrolledClasses(){
-        return $this->enrolment()->where('expiry_date', '>', date("Y-m-d"))
-        ->orderBy('expiry_date','desc');
-
+     public function enrolledClasses()
+    {
+        return $this->enrolment()
+            ->where('expiry_date', '>=', now())
+            ->orderBy('expiry_date', 'desc');
     }
 
     public function expiredClasses(){

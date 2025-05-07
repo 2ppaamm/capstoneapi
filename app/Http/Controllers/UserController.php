@@ -28,7 +28,7 @@ class UserController extends Controller
      */
     public function index(): JsonResponse
     {
-         $user = Auth::guard('sanctum')->user();
+        $user = Auth::guard('sanctum')->user();
         if (!$user || !$user->is_admin) {
             return response()->json([
                 'message' => 'Unauthorized: Admin access required.',
@@ -146,41 +146,50 @@ class UserController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * 2025/04/22 - updated for Flutter 
+     Update the specified resource in storage. 
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, User $user)
-    {
-        $logon_user = Auth::user();
+    public function update(Request $request, User $user){
+        $authUser = Auth::guard('sanctum')->user();
 
-        try {
-            if ($logon_user->id != $user->id && !$logon_user->is_admin) {
-                return response()->json(['message' => 'You have no access rights to update user.', 'code' => 401], 401);
-            }
-            if ($request->email || $request->maxile_level || $request->game_level) {
-                if (!$logon_user->is_admin) {
-                    array_except($request, ['email', 'maxile_level', 'game_level']);
-                }
-            }
-            if ($request->hasFile('image')) {
-                if (file_exists($user->image)) {
-                    unlink($user->image);
-                }
-                // return response()->json(['message' => 'existing file.', 'user' =>[], 'code' => 201], 201);
-                $timestamp = time();
-                $user->image = URL::to('/') . '/images/profiles/' . $timestamp . '.png';
-
-                $file = $request->image->move(public_path('images/profiles'), $timestamp . '.png');
-            }
-            $user->fill($request->except('image'))->save();
-            $user->push();
-            return response()->json(['message' => 'User successfully updated.', 'user' => $user, 'code' => 201], 201);
-        } catch (\Throwable $th) {
-            return response()->json(['message' => 'server has error.', 'user' => $th->getMessage(), 'code' => 400], 400);
+        // Authorization check
+        if ($authUser->id !== $user->id && !$authUser->is_admin) {
+            return response()->json([
+                'message' => 'You do not have permission to update this user.',
+            ], 403);
         }
+
+        // Optional: prevent unauthorized field updates
+        if (!$authUser->is_admin) {
+            $request->request->remove('email');
+            $request->request->remove('maxile_level');
+            $request->request->remove('game_level');
+        }
+
+        // Handle profile image update
+        if ($request->hasFile('image')) {
+            // Delete old image if it exists
+            if ($user->image && file_exists(public_path(parse_url($user->image, PHP_URL_PATH)))) {
+                unlink(public_path(parse_url($user->image, PHP_URL_PATH)));
+            }
+
+            $filename = time() . '.png';
+            $request->file('image')->move(public_path('images/profiles'), $filename);
+            $user->image = url('/images/profiles/' . $filename);
+        }
+
+        // Update user fields (excluding 'image')
+        $user->fill($request->except('image'));
+        $user->save();
+
+        return response()->json([
+            'message' => 'User info updated successfully.',
+            'user' => $user,
+        ], 200);
     }
 
     /**
@@ -220,4 +229,30 @@ class UserController extends Controller
             'performance'=>User::whereId($id)->with('tracksPassed','completedTests','fieldMaxile','tracksFailed','incompletetests')->get(),'code'=>200
     ], 200);
     }
+
+    public function subscriptionStatus(Request $request)
+    {
+        $user = Auth::guard('sanctum')->user();
+
+        if (!$user) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
+        }
+        // Check if user has any valid enrolment (non-expired class)
+        $activeEnrolments = $user->enrolledClasses()->exists();
+        $tracksData = App\Track::with([
+            'skills' => function ($query) {
+                $query->select('skills.*'); // Select only the columns from skills table
+            },
+            'users' => function ($query) {
+                $query->where('users.id', $this->user->id)->withPivot('doneNess');
+            }
+        ])->whereIn('id', $tracks->pluck('id'))->get();
+     
+         return response()->json([
+            'active' => $activeEnrolments,
+            'tracks' => $trackData,
+            'user' => $user,
+        ]);
+    }
+
 }

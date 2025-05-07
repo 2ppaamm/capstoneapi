@@ -74,13 +74,15 @@ class Question extends Model
     }
 
     public function answered($user, $correctness, $test, $quiz){
-        $record = ['question_answered' => TRUE,
+        $record = [
+            'question_answered' => TRUE,
             'answered_date' => new DateTime('now'),
-            'correct' =>$correctness,
+            'correct' => $correctness,
             'test_id' => $test ? $test->id : null,
             'quiz_id' => $quiz ? $quiz->id : null,
-            'attempts' => $this->attempts($user->id) + 1];
-        return $this->users()->sync([$user->id=>$record], false);
+            'attempts' => $this->attempts($user->id) + 1
+        ];
+        return $this->users()->updateExistingPivot($user->id, $record);
     }
 
     /*

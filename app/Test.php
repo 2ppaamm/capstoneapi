@@ -304,4 +304,23 @@ return                $this->level_id =  (!count($this->questions) || !$this->le
 
         return response()->json(['message'=>$message, 'test'=>$this->id, 'percentage'=>$result, 'score'=>$maxile, 'maxile'=> $maxile,'kudos'=>$kudos_earned,'code'=>206], 206);
     }
+
+    public function isCompletedBy($user){
+        $pivot = $this->testee()->where('user_id', $user->id)->first();
+        return $pivot && $pivot->pivot->test_completed;
+    }
+
+    public function markCompletedFor($user){
+        $result = $this->markTest($user->id);
+        $attempts = $this->attempts($user->id)->attempts ?? 0;
+
+        $this->testee()->updateExistingPivot($user->id, [
+            'test_completed' => true,
+            'completed_date' => now(),
+            'result' => $result,
+            'attempts' => $attempts + 1,
+        ]);
+    }
+
+
 }
