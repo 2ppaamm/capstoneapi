@@ -74,7 +74,7 @@ class Question extends Model
     }
 
     public function answered($user, $correctness, $test, $quiz){
-        $record = [
+    $record = [
             'question_answered' => TRUE,
             'answered_date' => new DateTime('now'),
             'correct' => $correctness,
@@ -88,13 +88,51 @@ class Question extends Model
     /*
      *  Assigns skill to users, questions to users, questions to test, skills to test, tracks to the test, note that test-user is already assigned when test was created.
      */
-    public function assigned($user, $test){
-        $this->users()->sync([$user->id], false);         
-        $user->skilluser()->sync([$this->skill_id], false);
-        $this->tests()->sync([$test->id =>['user_id'=>$user->id]], false);
-        $test->skills()->sync([$this->skill_id], false);
-        $tracks = Skill::find($this->skill_id)->first()->tracks;
-        $user->testedTracks()->syncWithoutDetaching($tracks);
+    public function assigned($user, $test)
+    {
+        // 1. Assign question to user in question_user with test-specific data
+        $this->users()->syncWithoutDetaching([
+            $user->id => [
+                'test_id' => $test->id,
+                'question_answered' => false,
+                'correct' => false,
+                'attempts' => 0,
+            ],
+        ]);
+
+        // 2. Assign skill to user in skill_user (if not already present)
+        $user->skilluser()->syncWithoutDetaching([
+            $this->skill_id => [
+                'skill_test_date' => now(),
+                'skill_passed' => 0,
+                'difficulty_passed' => 0,
+                'noOfTries' => 0,
+                'noOfPasses' => 0,
+                'noOfFails' => 0,
+            ],
+        ]);
+
+        // 3. Assign question to test in question_user (via tests() relation)
+        $this->tests()->syncWithoutDetaching([
+            $test->id => ['user_id' => $user->id],
+        ]);
+
+        // 4. Assign skill to test in skill_test (if not already attached)
+        $test->skills()->syncWithoutDetaching([$this->skill_id]);
+
+        // 5. Assign track(s) to user in track_user
+        $tracks = Skill::find($this->skill_id)?->tracks ?? collect();
+        foreach ($tracks as $track) {
+            $user->testedTracks()->syncWithoutDetaching([
+                $track->id => [
+                    'track_maxile' => 0.00,
+                    'track_passed' => 0,
+                    'track_test_date' => now(),
+                    'doneNess' => 0.00,
+                ]
+            ]);
+        }
+
         return $test->fresh();
     }
 

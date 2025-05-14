@@ -30,4 +30,9 @@ class Field extends Model
     public function user_maxile(){
         return $this->hasManyThrough(TrackUser::class, Track::class)->select('track_maxile', 'track_passed', 'track_test_date')->where('track_maxile', '>', 0);
     }
+
+    public function videos(){
+        return $this->hasMany(Video::class);
+    }
+
 }

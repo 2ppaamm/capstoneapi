@@ -252,33 +252,45 @@ class User extends Authenticatable implements AuthenticatableContract, Authoriza
         return $this->tests()->whereTestCompleted(1);
     }
 
-    // questions
-    public function myQuestions(){
-        return $this->belongsToMany(Question::class)->withPivot('question_answered', 'answered_date','correct','attempts','test_id','quiz_id','assessment_type')->withTimestamps();
+// Master relationship
+public function myQuestions() {
+    return $this->belongsToMany(Question::class)
+        ->withPivot('question_answered', 'answered_date', 'correct', 'attempts', 'test_id', 'quiz_id', 'assessment_type')
+        ->withTimestamps();
+}
+
+    // 1. Questions assigned but never attempted
+    public function unattemptedQuestions() {
+        return $this->myQuestions()
+            ->wherePivot('question_answered', false)
+            ->wherePivotNull('answered_date');
     }
 
-    public function unansweredQuestions(){
-        return $this->myQuestions()->whereQuestionAnswered(FALSE);
+    // 2. Questions attempted but still incorrect
+    public function wrongQuestions() {
+        return $this->myQuestions()
+            ->wherePivot('question_answered', true)
+            ->wherePivot('correct', false);
     }
 
-    public function answeredQuestion(){
-        return $this->myQuestions()->whereQuestionAnswered(TRUE);
+    // 3. Questions answered correctly at least once
+    public function correctQuestions() {
+        return $this->myQuestions()
+            ->wherePivot('correct', true);
     }
 
-    public function incorrectQuestions(){
-        return $this->myQuestions()->whereCorrect(0);
+    // Check if a specific question is assigned to the user
+    public function hasQuestion($question_id) {
+        return $this->myQuestions()
+            ->where('question_id', $question_id)
+            ->exists();
     }
 
-    public function correctQuestions(){
-        return $this->myQuestions()->whereCorrect(TRUE);
-    }
-
-    public function myQuestionPresent($question_id){
-        return $this->myQuestions()->whereQuestionId($question_id)->first();
-    }
-
-    public function noOfAttempts($question_id){
-        return $this->myQuestions()->where('question_id',$question_id)->select('attempts')->first()->attempts; 
+    // Get number of attempts for a specific question
+    public function numberOfAttempts($question_id) {
+        return optional(
+            $this->myQuestions()->where('question_id', $question_id)->select('attempts')->first()
+        )->attempts ?? 0;
     }
 
     //quizzes

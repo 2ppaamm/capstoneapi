@@ -61,6 +61,10 @@ class Track extends Model
         return $this->belongsToMany(Skill::class)->withPivot(['skill_order', 'start_date', 'end_date'])->withTimestamps();
     }
 
+    public function videos(){
+        return $this->hasMany(Video::class);
+    }
+
     public function checkedSkills(){
         return $this->belongsToMany(Skill::class)->whereCheck(TRUE)->withPivot(['skill_order', 'start_date', 'end_date'])->withTimestamps();
     }

@@ -51,6 +51,11 @@ class Skill extends Model
         return $this->belongsToMany(User::class)->withPivot('skill_test_date','skill_passed','skill_maxile','noOfTries','noOfPasses','difficulty_passed', 'noOfFails')->withTimestamps();
     }
 
+    public function videos(){
+        return $this->hasMany(Video::class);
+    }
+
+
     public function noOfQuestions(){
         return $this->questions->count();
     }

@@ -22,51 +22,54 @@ class FieldTrackQuestionController extends Controller
       $test = $this->getOrCreateTest($user, $track);
 
       $existingQuestions = $test->questions;
-      $correctQuestions = $user->correctquestions()->whereIn('skill_id', $track->skills()->pluck('id'))->pluck('id');
+      $correctQuestions = $user->correctquestions()
+          ->whereIn('skill_id', $track->skills()->pluck('id'))
+          ->pluck('id');
+
+      $excludedIds = $existingQuestions->pluck('id')->merge($correctQuestions)->unique();
+
       $allTrackQuestions = Question::whereIn('skill_id', $track->skills()->pluck('id'))->get();
 
-      // Fill up to required number of questions
       $questionsNeeded = Config::get('app.questions_per_test') - $existingQuestions->count();
       $additional = collect();
 
       if ($questionsNeeded > 0) {
-          $excludedIds = $existingQuestions->pluck('id')->merge($correctQuestions);
-          $moreTrackQuestions = $allTrackQuestions->whereNotIn('id', $excludedIds)->take($questionsNeeded);
+          $moreTrackQuestions = $allTrackQuestions
+              ->filter(fn($q) => !$excludedIds->contains($q->id))
+              ->take($questionsNeeded);
           $additional = $additional->merge($moreTrackQuestions);
           $questionsNeeded -= $moreTrackQuestions->count();
       }
 
-      // Pull from same-level if still lacking
       if ($questionsNeeded > 0) {
-          $sameLevelQuestions = Question::whereHas('skill.tracks', fn($q) => $q->where('level_id', $track->level_id))
-              ->whereNotIn('id', $existingQuestions->pluck('id'))
+          $sameLevelQuestions = Question::whereHas('skill.tracks', fn($q) =>
+                  $q->where('level_id', $track->level_id))
+              ->whereNotIn('id', $excludedIds)
               ->take($questionsNeeded)
               ->get();
 
           $additional = $additional->merge($sameLevelQuestions);
       }
 
-      // Assign all new questions
       foreach ($additional as $q) {
           $q->assigned($user, $test);
       }
 
-      // Fetch unanswered assigned questions
       $unanswered = Question::whereHas('users', fn($q) =>
-          $q->where('question_user.test_id', $test->id)
-            ->where('question_user.user_id', $user->id)
-            ->where('question_user.question_answered', false))
-          ->with('skill.tracks.level') // for Flutter
+              $q->where('question_user.test_id', $test->id)
+                ->where('question_user.user_id', $user->id)
+                ->where('question_user.question_answered', false))
+          ->with('skill.tracks.level')
           ->get();
 
       $toSend = $unanswered->take(Config::get('app.questions_per_quiz'))->map(function ($q) {
-          $q->skill; // make sure skill is loaded
-          $track = $q->skill->tracks()->first(); // assumes 1 main track
-          $q->level = $track?->level?->name ?? ''; // attach level name
+          $q->skill;
+          $track = $q->skill->tracks()->first();
+          $q->level = $track?->level?->name ?? '';
           return $q;
       });
 
-      $doneNess = $user->tracks()->where('tracks.id', $track->id)->first()->pivot->doneNess ?? 0;
+      $doneNess = $user->tracks()->where('tracks.id', $track->id)->first()?->pivot->doneNess ?? 0;
 
       return response()->json([
           'message' => 'Request executed successfully',
@@ -76,6 +79,8 @@ class FieldTrackQuestionController extends Controller
           'code' => 201
       ]);
   }
+
+
 
   private function getOrCreateTest($user, $track)
   {

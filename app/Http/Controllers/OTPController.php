@@ -72,7 +72,10 @@ class OTPController extends Controller
 	    if (!$user) {
 	        return response()->json(['message' => 'Invalid or expired OTP'], 401);
 	    }
-
+	    
+	    if (is_null($user->lives)) {
+	        $user->lives = 5;
+	    }
 	    // Clear the OTP once verified
 	    $user->otp_code = null;
 	    $user->otp_expires_at = null;
@@ -80,7 +83,8 @@ class OTPController extends Controller
 
 	    $token = $user->createToken('login')->plainTextToken;
 
-	    $isSubscriber = ($user->maxile_level > 0 || $user->game_level > 0);
+	    $isSubscriber = !is_null($user->date_of_birth) && !is_null($user->firstname);
+
 
 	    return response()->json([
 	        'message' => 'OTP verified. Login successful.',
@@ -89,6 +93,9 @@ class OTPController extends Controller
 	        'first_name' => $user->firstname,
 	        'is_subscriber' => $isSubscriber,
 	        'dob' => $user->date_of_birth,
+	        'maxile_level' => (int) round($user->maxile_level),
+	        'game_level' => (int) $user->game_level,
+	        'lives' => (int) $user->lives,
 	    ]);
 	}
 

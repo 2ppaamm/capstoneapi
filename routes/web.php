@@ -16,10 +16,21 @@
 //Route::get('/loadall', 'LoadController@loadall');
 //Route::get('/loadquestions', 'LoadQuestions@loadall');
 //Route::get('/loadsecondary', 'LoadSecondary@loadall');
-use Illuminate\Support\Facades\Mail;
-use App\Mail\SendOtpMail;
+/*use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\Storage;
 
-Route::get('/test-mail', function () {
-    Mail::to('youremail@gmail.com')->send(new SendOtpMail('123456'));
-    return 'Mail sent!';
+Route::get('/images/{folder}/{filename}', function ($folder, $filename) {
+    $path = public_path("images/$folder/$filename");
+
+    if (!file_exists($path)) {
+        abort(404);
+    }
+
+    return Response::file($path, [
+        'Access-Control-Allow-Origin' => '*',
+        'Access-Control-Allow-Methods' => 'GET, OPTIONS',
+        'Access-Control-Allow-Headers' => '*',
+        'Content-Type' => mime_content_type($path),
+    ]);
 });
+*/
