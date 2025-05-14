@@ -71,6 +71,17 @@ class User extends Authenticatable implements AuthenticatableContract, Authoriza
     public function mastercodes(){
         return $this->hasMany(Mastercode::class);
     }
+    
+    public function lives()
+    {
+        return $this->hasOne(UserLives::class);
+    }
+
+    
+    public function livesTransactions()
+    {
+        return $this->hasMany(LivesTransaction::class);
+    }
 
     public function questions() {                        // question setter
         return $this->hasMany(Question::class);
