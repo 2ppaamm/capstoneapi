@@ -86,8 +86,12 @@ class Track extends Model
         return $this->belongsToMany(Unit::class,'course_track')->withPivot(['track_order','number_of', 'course_id'])->select('unit');
     }
 
-    public function track_maxile(){
-        return $this->users()->whereUserId(Auth::user()->id)->select('track_maxile', 'track_test_date', 'track_passed');
+    public function track_maxile()
+    {
+        return $this->users()
+            ->where('user_id', Auth::id())
+            ->first()
+            ?->pivot;
     }
 
     public function allSkillsPassed($userid, $max_track_maxile){
@@ -111,7 +115,7 @@ class Track extends Model
         return $track_maxile;        
     }
 
-    public function calculateMaxile($user, $correctness, $diagnostic){
+ /*   public function calculateMaxile($user, $correctness, $diagnostic){
         $track_maxile = $diagnostic ? $correctness ? $this->level->end_maxile_level : 0 : 0; //diagnostic and correct
         // if not diagnostic
         if (!$diagnostic) {
@@ -126,7 +130,7 @@ class Track extends Model
         $this->users()->sync([$user->id=>$record]);
         return $track_maxile;
     }
-
+*/
     public function passTrack($user, $track_maxile){
         $record = [
             'track_test_date' => new DateTime('now'),

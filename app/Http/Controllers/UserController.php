@@ -153,7 +153,7 @@ class UserController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, User $user){
+    public function update(Request $request, User $user) {
         $authUser = Auth::guard('sanctum')->user();
 
         // Authorization check
@@ -172,7 +172,6 @@ class UserController extends Controller
 
         // Handle profile image update
         if ($request->hasFile('image')) {
-            // Delete old image if it exists
             if ($user->image && file_exists(public_path(parse_url($user->image, PHP_URL_PATH)))) {
                 unlink(public_path(parse_url($user->image, PHP_URL_PATH)));
             }
@@ -182,8 +181,18 @@ class UserController extends Controller
             $user->image = url('/images/profiles/' . $filename);
         }
 
-        // Update user fields (excluding 'image')
+        // ✅ Capture pre-filled state
+        $wasMissingFirstnameAndDob = is_null($user->firstname) || is_null($user->date_of_birth);
         $user->fill($request->except('image'));
+
+        // ✅ Check AFTER filling, using original state
+        if ($request->filled(['firstname', 'date_of_birth']) && $wasMissingFirstnameAndDob && is_null($user->lives)) {
+            $freePlan = Plan::find(1);
+            if ($freePlan && !is_null($freePlan->default_lives)) {
+                $user->lives = $freePlan->default_lives;
+            }
+        }
+
         $user->save();
 
         return response()->json([
@@ -191,6 +200,7 @@ class UserController extends Controller
             'user' => $user,
         ], 200);
     }
+
 
     /**
      * Remove the specified resource from storage.

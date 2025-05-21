@@ -2,14 +2,11 @@
 
 namespace App;
 
-use App\Role;
-use App\Quiz;
 use Carbon\Carbon;
-use DateTime;
-use DB;
-use Auth;
-use Mail;
-use Config;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Mail;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Foundation\Auth\Access\Authorizable;
@@ -83,6 +80,40 @@ class User extends Authenticatable implements AuthenticatableContract, Authoriza
         return $this->hasMany(LivesTransaction::class);
     }
 
+    public function livesRemaining(){
+        // Determine user's plan
+        $planName = $this->enrolledClasses()->latest()->first()?->pivot?->plan ?? 'free';
+
+        // Always fall back to the 'free' plan if none is found
+        $plan = \App\Plan::where('name', $planName)->first()
+            ?? \App\Plan::where('name', 'free')->first();
+
+        // If even the 'free' plan is missing (unexpected), default to 0 lives
+        if (!$plan) {
+            return 0;
+        }
+
+        // Unlimited lives case
+        if ($plan->default_lives === null) {
+            return INF;
+        }
+
+        $totalLives = $plan->default_lives;
+
+        $livesUsedToday = $this->livesTransactions()
+            ->where('created_at', '>=', now('UTC')->startOfDay())
+            ->where('amount', '<', 0)
+            ->sum('amount') ?? 0;
+
+        return max(0, $totalLives + $livesUsedToday);
+    }
+
+    
+    public function hasLivesRemaining(): bool
+    {
+        return $this->livesRemaining() > 0;
+    }
+
     public function questions() {                        // question setter
         return $this->hasMany(Question::class);
     }
@@ -120,8 +151,15 @@ class User extends Authenticatable implements AuthenticatableContract, Authoriza
     }
     //user has these skills
     public function skilluser(){
-        return $this->belongsToMany(Skill::class)->withPivot('skill_maxile', 'skill_test_date','skill_passed','difficulty_passed')->withTimestamps();
-    }
+        return $this->belongsToMany(Skill::class)->withPivot(
+            'skill_test_date',
+            'skill_passed',
+             'skill_maxile',
+            'noOfTries',
+            'correct_streak',
+            'difficulty_passed',
+            'fail_streak')->withTimestamps();
+            }
 
     public function skillspassed(){
         return $this->skilluser()->wherePivot('skill_passed','=',TRUE)->get();
@@ -218,11 +256,11 @@ class User extends Authenticatable implements AuthenticatableContract, Authoriza
     }
 
     public function skill_user(){
-        return $this->belongsToMany(Skill::class)->withPivot('skill_test_date','skill_passed','skill_maxile','noOfTries','noOfPasses','difficulty_passed', 'noOfFails');
+        return $this->belongsToMany(Skill::class)->withPivot('skill_test_date','skill_passed','skill_maxile','noOfTries','correct_streak','difficulty_passed', 'fail_streak');
     }
 
     public function skillMaxile(){
-        return $this->belongsToMany(Skill::class)->withPivot('skill_maxile', 'skill_test_date','noOfTries','noOfPasses','skill_passed','difficulty_passed')->select('skill_id','skill', 'skill_maxile', 'skill_test_date','noOfTries','noOfPasses','skill_passed','difficulty_passed')->groupBy('skill');
+        return $this->belongsToMany(Skill::class)->withPivot('skill_maxile', 'skill_test_date','noOfTries','correct_streak','skill_passed','difficulty_passed')->select('skill_id','skill', 'skill_maxile', 'skill_test_date','noOfTries','correct_streak','skill_passed','difficulty_passed')->groupBy('skill');
     }
 
     public function completedSkills(){
@@ -245,10 +283,10 @@ class User extends Authenticatable implements AuthenticatableContract, Authoriza
 
     public function incompletetests() {
         return $this->tests()
-                    ->wherePivot('test_completed', 0) // Ensure 'test_completed' is referenced correctly
-                    ->where('tests.start_available_time', '<=', now()) // Assuming 'start_available_time' and 'end_available_time' are columns on the 'tests' table
-                    ->where('tests.end_available_time', '>=', now())
-                    ->orderBy('tests.created_at', 'desc'); // Ensure you're ordering by the test creation date
+            ->wherePivot('test_completed', 0) // Ensure 'test_completed' is referenced correctly
+            ->where('tests.start_available_time', '<=', now()) // Assuming 'start_available_time' and 'end_available_time' are columns on the 'tests' table
+            ->where('tests.end_available_time', '>=', now())
+            ->orderBy('tests.created_at', 'desc'); // Ensure you're ordering by the test creation date
     }
 
     public function diagnostictests() {
@@ -364,8 +402,11 @@ public function myQuestions() {
         return $this->testedTracks()->pluck('track_maxile');
     }
     // User's current average maxile
-    public function scopeUserMaxile($query){
-        return \App\FieldUser::whereUserId(Auth::user()->id)->select(DB::raw('AVG(field_maxile) AS user_maxile'))->first()->user_maxile;
+    public function currentMaxile()
+    {
+        return $this->fields()
+            ->wherePivot('field_maxile', '>', 0)
+            ->avg('field_user.field_maxile') ?? 0;
     }
 
     public function scopeHighest_scores($query){

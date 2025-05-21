@@ -19,16 +19,14 @@ class TestUser extends Model
      *
      * @var array
      */
-    protected $fillable = ['test_id','user_id', 'test_completed', 'completed_date','result','attempts'];
+    protected $fillable = ['test_id','user_id', 'test_completed', 'completed_date','result','attempts','kudos'];
 
-    /**
-     * The attributes excluded from the model's JSON form.
-     *
-     * @var array
-     */
-    protected $hidden = ['password', 'remember_token'];
+    public function user() {
+        return $this->belongsTo(User::class);
+    }
 
-    // make dates carbon so that carbon google that out
-    protected $dates = ['last_quiz_date'];
+    public function test() {
+        return $this->belongsTo(SkillTest::class, 'test_id');
+    }
 
 }

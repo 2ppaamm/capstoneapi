@@ -98,7 +98,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Diagnostics & Visitors
     Route::post('/test/protected/{type}', [App\Http\Controllers\DiagnosticController::class, 'index']);
-    Route::post('/test/answers', [App\Http\Controllers\DiagnosticController::class, 'answer']);
+    Route::post('/test/answers', [App\Http\Controllers\AnswerController::class, 'answer']);
     Route::get('/test/trackquestions/{track}', [App\Http\Controllers\FieldTrackQuestionController::class, 'index']);
     Route::post('/mastercode', [VisitorController::class, 'mastercode']);
     Route::post('/diagnostic', [VisitorController::class, 'diagnostic']);

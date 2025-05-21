@@ -14,6 +14,6 @@ class SkillUser extends Model
      *
      * @var array
      */
-    protected $fillable = ['skill_id','user_id', 'skill_maxile', 'skill_test_date','skill_passed','difficulty_passed'];
+    protected $fillable = ['skill_id','user_id', 'skill_maxile', 'skill_test_date','skill_passed','difficulty_passed', 'noOfTries', 'correct_streak', 'total_correct_attempts', 'total_incorrect_attempts', 'fail_streaks'];
 
 }

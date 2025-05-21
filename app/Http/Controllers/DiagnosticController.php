@@ -308,7 +308,7 @@ class DiagnosticController extends Controller
 
 //        $house = \App\House::findOrFail($this->user->enrolledClasses()->latest()->first()->house_id);
 //        $quiz = $this->user->quizzes()->latest()->first();
-        $test = Test::findOrFail($request->test);
+    return    $test = Test::findOrFail($request->test);
 
         // Check if test already completed
         $pivot = $test->testee()->where('user_id', $user->id)->first()?->pivot;

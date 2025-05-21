@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use App\Log;
 use App\ErrorLog;
 use DateTime;
+use DB;
 
 class Question extends Model
 {
@@ -48,8 +49,14 @@ class Question extends Model
         return $this->belongsToMany(Quiz::class)->withPivot('date_answered','correct')->withTimestamps();
     }
 
-    public function users(){
-        return $this->belongsToMany(User::class, 'question_user')->withPivot('question_answered', 'answered_date','correct', 'test_id','attempts')->withTimestamps();
+    public function users()
+    {
+        return $this->belongsToMany(User::class)
+            ->withPivot([
+                'question_answered', 'answered_date', 'correct', 'test_id',
+                'quiz_id', 'attempts', 'assessment_type', 'kudos'
+            ])
+            ->withTimestamps();
     }
 
     public function tests(){
@@ -61,80 +68,123 @@ class Question extends Model
         return $num_attempts ? $num_attempts->attempts:1;
     }
 
-    public function correctness($user, $answers){
-            $correctness = FALSE;
-            if ($this->type_id == 2) {
-                $correct3 = sizeof($answers) > 3 ? $answers[3] == $this->answer3 ? TRUE : FALSE : TRUE;
-                $correct2 = sizeof($answers) > 2 ? $answers[2] == $this->answer2 ? TRUE : FALSE : TRUE;
-                $correct1 = sizeof($answers) > 1 ? $answers[1] == $this->answer1 ? TRUE : FALSE : TRUE;
-                $correct = sizeof($answers) > 0 ? $answers[0] == $this->answer0 ? TRUE : FALSE : TRUE;
-                $correctness = $correct + $correct1 + $correct2 + $correct3 > 3? TRUE: FALSE;
-            } else $correctness = $this->correct_answer != $answers ? FALSE:TRUE;
-        return $correctness;
+    public function correctness($user, $answers)
+    {
+        if ($this->type_id == 2) {
+            // Fill-in-the-blank (up to 4 answers)
+            return
+                (!isset($answers[0]) || $answers[0] == $this->answer0) &&
+                (!isset($answers[1]) || $answers[1] == $this->answer1) &&
+                (!isset($answers[2]) || $answers[2] == $this->answer2) &&
+                (!isset($answers[3]) || $answers[3] == $this->answer3);
+        }
+
+        // Multiple-choice (type 1)
+        return $this->correct_answer == $answers[0];
     }
 
-    public function answered($user, $correctness, $test, $quiz){
-    $record = [
-            'question_answered' => TRUE,
-            'answered_date' => new DateTime('now'),
-            'correct' => $correctness,
-            'test_id' => $test ? $test->id : null,
-            'quiz_id' => $quiz ? $quiz->id : null,
-            'attempts' => $this->attempts($user->id) + 1
-        ];
-        return $this->users()->updateExistingPivot($user->id, $record);
+    public function answered($user, $correctness, $test)
+    {
+        return \App\QuestionUser::where('question_id', $this->id)
+            ->where('user_id', $user->id)
+            ->where('test_id', $test?->id)
+            ->update([
+                'question_answered' => true,
+                'answered_date' => now(),
+                'correct' => $correctness,
+                'test_id' => $test?->id,
+                'attempts' => $this->attempts($user->id) + 1,
+                'kudos' => $this->difficulty_id + 1,
+                'assessment_type' => $test ? 'test':null,
+                'updated_at' => now(),
+            ]);
     }
+
 
     /*
-     *  Assigns skill to users, questions to users, questions to test, skills to test, tracks to the test, note that test-user is already assigned when test was created.
+     * Assigns all necessary relationships for a test question:
+     * 1. Skill → user (skill_user)
+     * 2. Question → user for test (question_user)
+     * 3. Question → test (via question_user)
+     * 4. Skill → test (skill_test)
+     * 5. Track(s) of the skill → user (track_user)
+     *
+     * Note: Test-user relation is assumed to be created when the test was initialized.
      */
+
     public function assigned($user, $test)
     {
-        // 1. Assign question to user in question_user with test-specific data
-        $this->users()->syncWithoutDetaching([
-            $user->id => [
+        $now = now();
+
+        // 1. Link question to user and test (question_user)
+        DB::table('question_user')->updateOrInsert(
+            [
+                'question_id' => $this->id,
                 'test_id' => $test->id,
+                'user_id' => $user->id,
+            ],
+            [
                 'question_answered' => false,
                 'correct' => false,
                 'attempts' => 0,
-            ],
-        ]);
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]
+        );
 
-        // 2. Assign skill to user in skill_user (if not already present)
-        $user->skilluser()->syncWithoutDetaching([
-            $this->skill_id => [
-                'skill_test_date' => now(),
-                'skill_passed' => 0,
-                'difficulty_passed' => 0,
+        // 2. Link skill to user (skill_user)
+        DB::table('skill_user')->updateOrInsert(
+            [
+                'skill_id' => $this->skill_id,
+                'user_id' => $user->id,
+            ],
+            [
+                'skill_test_date' => $now,
+                'skill_passed' => false,
+                'difficulty_passed' => false,
                 'noOfTries' => 0,
-                'noOfPasses' => 0,
-                'noOfFails' => 0,
+                'correct_streak' => 0,
+                'fail_streak' => 0,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]
+        );
+
+        // 3. Link skill to test (skill_test)
+        DB::table('skill_test')->updateOrInsert(
+            [
+                'skill_id' => $this->skill_id,
+                'test_id' => $test->id,
             ],
-        ]);
+            [
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]
+        );
 
-        // 3. Assign question to test in question_user (via tests() relation)
-        $this->tests()->syncWithoutDetaching([
-            $test->id => ['user_id' => $user->id],
-        ]);
-
-        // 4. Assign skill to test in skill_test (if not already attached)
-        $test->skills()->syncWithoutDetaching([$this->skill_id]);
-
-        // 5. Assign track(s) to user in track_user
+        // 4. Link track(s) of this skill to user (track_user)
         $tracks = Skill::find($this->skill_id)?->tracks ?? collect();
+
         foreach ($tracks as $track) {
-            $user->testedTracks()->syncWithoutDetaching([
-                $track->id => [
+            DB::table('track_user')->updateOrInsert(
+                [
+                    'track_id' => $track->id,
+                    'user_id' => $user->id,
+                ],
+                [
                     'track_maxile' => 0.00,
-                    'track_passed' => 0,
-                    'track_test_date' => now(),
+                    'track_passed' => false,
+                    'track_test_date' => $now,
                     'doneNess' => 0.00,
+                    'created_at' => $now,
+                    'updated_at' => $now,
                 ]
-            ]);
+            );
         }
 
         return $test->fresh();
     }
+
 
     /*
      *  Assigns skill to users, questions to users, questions to quiz, quiz to user.
@@ -147,5 +197,129 @@ class Question extends Model
         $track = $this->skill->tracks()->pluck('id')->intersect($house->tracks()->pluck('id'));
         $user->testedTracks()->syncWithoutDetaching($tracks);
         return $quiz;
+    }
+
+    public function processProgressFor($user, $correct, $test = null)
+    {
+        $now = now();
+        $skill = $this->skill;
+        $track = $skill->tracks()->first();
+        $field = $track->field;
+        $difficulty = $this->difficulty_id;
+
+
+        // Load skill_user pivot record
+        $pivot = $skill->users()->where('user_id', $user->id)->first()?->pivot;
+
+        $correct_streak = $pivot?->correct_streak ?? 0;
+        $fail_streak = $pivot?->fail_streak ?? 0;
+        $difficulty_passed = $pivot?->difficulty_passed ?? 0;
+        $skill_passed = $pivot?->skill_passed ?? 0;
+        $total_correct = $pivot?->total_correct_attempts ?? 0;
+        $total_incorrect = $pivot?->total_incorrect_attempts ?? 0;
+        $noOfTries = $pivot?->noOfTries ?? 0;
+
+        $max_difficulty = config('app.difficulty_levels');
+        $to_pass = config('app.number_to_pass');
+        $to_fail = config('app.number_to_fail');
+
+        $noOfTries++;
+        if ($correct) {
+            $correct_streak++;
+            $fail_streak = 0;
+            $total_correct++;
+        } else {
+            $fail_streak++;
+            $correct_streak = 0;
+            $total_incorrect++;
+        }
+
+        // Upgrade/downgrade logic
+        if ($correct && $difficulty > $difficulty_passed && $correct_streak >= $to_pass) {
+            $difficulty_passed = $difficulty;
+            $correct_streak = 1; // reset
+        } elseif (!$correct && $difficulty <= $difficulty_passed && $fail_streak >= $to_fail) {
+            $difficulty_passed = max(0, $difficulty_passed - 1);
+            $fail_streak = 1; // reset
+        }
+
+        $skill_passed = $difficulty_passed >= $max_difficulty;
+        $skill_maxile = $difficulty_passed > 0
+            ? ($skill_passed
+                ? $track->level->end_maxile_level
+                : $track->level->start_maxile_level + ($difficulty_passed * 100 / $max_difficulty))
+            : $track->level->start_maxile_level;
+
+        // Update skill_user pivot
+        $skill->users()->syncWithoutDetaching([
+            $user->id => [
+                'skill_test_date' => $now,
+                'skill_passed' => $skill_passed,
+                'difficulty_passed' => $difficulty_passed,
+                'skill_maxile' => round($skill_maxile, 2),
+                'noOfTries' => $noOfTries,
+                'correct_streak' => $correct_streak,
+                'fail_streak' => $fail_streak,
+                'total_correct_attempts' => $total_correct,
+                'total_incorrect_attempts' => $total_incorrect,
+                'updated_at' => $now,
+            ]
+        ]);
+
+        // Update track maxile
+        $passedSkills = $track->skills()->whereHas('users', function ($q) use ($user) {
+            $q->where('user_id', $user->id)->where('skill_passed', true);
+        })->count();
+
+        $totalSkills = $track->skills()->count();
+        $track_passed = ($passedSkills === $totalSkills) && $totalSkills > 0;
+
+        $track_maxile = $track_passed
+            ? $track->level->end_maxile_level
+            : round(($track->level->start_maxile_level + ($passedSkills / max(1, $totalSkills)) * ($track->level->end_maxile_level - $track->level->start_maxile_level)), 2);
+
+        $track->users()->syncWithoutDetaching([
+            $user->id => [
+                'track_test_date' => $now,
+                'track_passed' => $track_passed,
+                'track_maxile' => $track_maxile,
+                'updated_at' => $now,
+            ]
+        ]);
+
+        // Update field maxile (highest of all track maxiles in this field)
+        $highestTrackMaxile = $user->testedTracks()
+            ->where('tracks.field_id', $field->id)
+            ->wherePivot('track_maxile', '>', 0)
+            ->max('track_maxile') ?? 0;
+
+        $field_user = $user->fields()
+            ->where('field_id', $field->id)
+            ->wherePivot('month_achieved', date('Ym'))
+            ->first();
+
+        $existing_field_maxile = $field_user?->pivot?->field_maxile ?? 0;
+
+        if ($highestTrackMaxile > $existing_field_maxile) {
+            $user->fields()->syncWithoutDetaching([
+                $field->id => [
+                    'field_maxile' => $highestTrackMaxile,
+                    'field_test_date' => $now,
+                    'month_achieved' => date('Ym'),
+                    'updated_at' => $now,
+                ]
+            ]);
+        }
+        $user->maxile_level = $user->fields()
+            ->wherePivot('field_maxile', '>', 0)
+            ->avg('field_user.field_maxile') ?? 0;
+
+        $user->save();
+
+        return [
+            'skill_maxile' => $skill_maxile,
+            'track_maxile' => $track_maxile,
+            'field_maxile' => max($existing_field_maxile, $highestTrackMaxile),
+        ];
     }
 }

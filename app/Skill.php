@@ -48,7 +48,7 @@ class Skill extends Model
     }
     //user's skill maxile score
     public function users(){
-        return $this->belongsToMany(User::class)->withPivot('skill_test_date','skill_passed','skill_maxile','noOfTries','noOfPasses','difficulty_passed', 'noOfFails')->withTimestamps();
+        return $this->belongsToMany(User::class)->withPivot('skill_test_date','skill_passed','skill_maxile','noOfTries','correct_streak','difficulty_passed', 'fail_streak')->withTimestamps();
     }
 
     public function videos(){
@@ -64,8 +64,8 @@ class Skill extends Model
         return $this->users()->whereUserId($userid)->select('noOfTries')->first()->noOfTries;
     }
 
-    public function noOfPasses($userid){
-        return $this->users()->whereUserId($userid)->select('noOfPasses')->first()->noOfPasses;
+    public function correct_streak($userid){
+        return $this->users()->whereUserId($userid)->select('correct_streak')->first()->correct_streak;
     }
 
     public function difficulty_passed($userid){
@@ -81,25 +81,25 @@ class Skill extends Model
     }
 
     public function handleQuiz($user, $question, $correctness){
-        $userSkill= $this->users()->whereUserId($user->id)->select('noOfPasses', 'noOfTries', 'difficulty_passed','noOfFails','skill_maxile','skill_passed')->first();
+        $userSkill= $this->users()->whereUserId($user->id)->select('correct_streak', 'noOfTries', 'difficulty_passed','fail_streak','skill_maxile','skill_passed')->first();
 
         if ($userSkill) {
             $noOfTries = $userSkill->noOfTries + 1;
-            $noOfPasses = $userSkill->noOfPasses;
-            $noOfFails = $userSkill->noOfFails;
+            $correct_streak = $userSkill->correct_streak;
+            $fail_streak = $userSkill->fail_streak;
             $difficulty_passed = $userSkill->difficulty_passed;
             $skill_passed = $userSkill->skill_passed;
             $skill_maxile = $userSkill->skill_maxile;
         } else {
-            $noOfFails = $noOfPasses = $noOfTries = $difficulty_passed =$skill_passed =0;
+            $fail_streak = $correct_streak = $noOfTries = $difficulty_passed =$skill_passed =0;
         }
 
         // mark quiz
         if ($correctness) {
             $difficulty_passed += 1;
-            $noOfPasses += 1;
+            $correct_streak += 1;
             $difficulty_passed = $question->difficulty_id;
-        } else $noOfFails += 1;
+        } else $fail_streak += 1;
         // check if skill passed
         $allskillquestions = count(\App\Question::whereSkillId($question->skill_id)->get());
         $correctquestions = count($user->correctQuestions()->whereSkillId($question->skill_id)->get());
@@ -109,8 +109,8 @@ class Skill extends Model
         $record = [
             'skill_test_date' => new DateTime('now'),
             'skill_passed' => $skill_passed,
-            'noOfPasses' =>$noOfPasses,
-            'noOfFails' => $noOfFails,
+            'correct_streak' =>$correct_streak,
+            'fail_streak' => $fail_streak,
             'difficulty_passed' => $difficulty_passed,
             'noOfTries'=> $noOfTries + 1];
 
@@ -124,17 +124,17 @@ class Skill extends Model
      */
     public function handleAnswer($userid, $difficulty, $correct, $track, $test) {
         $skill_maxile = 0;
-        $userSkill= $this->users()->whereUserId($userid)->select('noOfPasses', 'noOfTries', 'difficulty_passed','noOfFails','skill_maxile','skill_passed')->first();
+        $userSkill= $this->users()->whereUserId($userid)->select('correct_streak', 'noOfTries', 'difficulty_passed','fail_streak','skill_maxile','skill_passed')->first();
 
         if ($userSkill) {
             $noOfTries = $userSkill->noOfTries + 1;
-            $noOfPasses = $userSkill->noOfPasses;
-            $noOfFails = $userSkill->noOfFails;
+            $correct_streak = $userSkill->correct_streak;
+            $fail_streak = $userSkill->fail_streak;
             $difficulty_passed = $userSkill->difficulty_passed;
             $skill_passed = $userSkill->skill_passed;
             $skill_maxile = $userSkill->skill_maxile;
         } else {
-            $noOfFails = $noOfPasses = $noOfTries = $difficulty_passed =$skill_passed =0;
+            $fail_streak = $correct_streak = $noOfTries = $difficulty_passed =$skill_passed =0;
         }
 
         if ($test->diagnostic){
@@ -144,22 +144,22 @@ class Skill extends Model
             }
         } else { //if not diagnostic
             if (!$correct) {
-                $noOfFails += 1;
+                $fail_streak += 1;
                 if ($difficulty <= $difficulty_passed){   // testing simpler than passed
                    if (!$test->diagnostic){
-                      if ($noOfFails >= Config::get('app.number_to_fail')){
+                      if ($fail_streak >= Config::get('app.number_to_fail')){
                          $difficulty_passed = max(0,$difficulty_passed - 1);
-                         $noOfFails = 1;                    
+                         $fail_streak = 1;                    
                       }
                    }
                 }
             } else {
-                $noOfPasses += 1;
+                $correct_streak += 1;
                 if ($difficulty_passed < $difficulty){  //testing more difficult than passed
-                    if ($test->diagnostic || $noOfPasses >= Config::get('app.number_to_pass')) {
+                    if ($test->diagnostic || $correct_streak >= Config::get('app.number_to_pass')) {
                         $difficulty_passed = $difficulty;
-                        $noOfFails = 0;
-                        $noOfPasses = 1;
+                        $fail_streak = 0;
+                        $correct_streak = 1;
                     }
                 }
                 $skill_passed = $difficulty_passed >= Config::get('app.difficulty_levels') ? TRUE : FALSE;
@@ -167,7 +167,6 @@ class Skill extends Model
             // calculate skill_maxile
             $skill_maxile = $difficulty_passed ? $skill_passed ? $track->level->end_maxile_level:$track->level->start_maxile_level+(100/Config::get('app.difficulty_levels')*$difficulty_passed) : 0; 
             if ($skill_passed) {
-                $test->noOfSkillsPassed += 1;
                 $test->test_maxile = max($test->test_maxile,\App\Level::find($this->tracks()->first()->level_id)->end_maxile_level);
                 $test->save();
             }
@@ -179,23 +178,23 @@ class Skill extends Model
             'difficulty_passed' => $difficulty_passed,
             'skill_maxile' => max($skill_maxile, 0),
             'noOfTries'=> $noOfTries,
-            'noOfPasses'=>max(0,$noOfPasses),
-            'noOfFails'=> max(0,$noOfFails)];
+            'correct_streak'=>max(0,$correct_streak),
+            'fail_streak'=> max(0,$fail_streak)];
 
         $this->users()->sync([$userid=>$record]);              //update record
         return $skill_maxile;
     }
 
     public function forcePass($userid, $difficulty_passed, Track $track) {
-        $userSkill= $this->users()->whereUserId($userid)->select('noOfPasses', 'noOfTries', 'difficulty_passed','noOfFails','skill_maxile','skill_passed')->first();
+        $userSkill= $this->users()->whereUserId($userid)->select('correct_streak', 'noOfTries', 'difficulty_passed','fail_streak','skill_maxile','skill_passed')->first();
 
         if ($userSkill) {
             $noOfTries = $userSkill->noOfTries + 1;
-            $noOfPasses = $userSkill->noOfPasses;
-            $noOfFails = $userSkill->noOfFails;
+            $correct_streak = $userSkill->correct_streak;
+            $fail_streak = $userSkill->fail_streak;
             $skill_passed = $userSkill->skill_passed;
         } else {
-            $noOfFails = $noOfPasses = $noOfTries = $difficulty_passed =$skill_passed =0;
+            $fail_streak = $correct_streak = $noOfTries = $difficulty_passed =$skill_passed =0;
         }
 
         $record =[
@@ -204,12 +203,12 @@ class Skill extends Model
             'difficulty_passed' => Config::get('app.difficulty_levels'),
             'skill_maxile' => max($userSkill->skill_maxile, $track->level->end_maxile_level),
             'noOfTries'=> $noOfTries,
-            'noOfPasses'=>max(0,$noOfPasses),
-            'noOfFails'=> max(0,$noOfFails)];
+            'correct_streak'=>max(0,$correct_streak),
+            'fail_streak'=> max(0,$fail_streak)];
         return $this->users()->sync([$userid=>$record]);
     }
 
     public function users_failed(){
-        return $this->users()->wherePivot('skill_passed','=',FALSE)->wherePivot('noOfFails','>',3)->get();
+        return $this->users()->wherePivot('skill_passed','=',FALSE)->wherePivot('fail_streak','>',3)->get();
     }
 }

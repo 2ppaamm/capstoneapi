@@ -7,16 +7,188 @@ use Illuminate\Http\Request;
 use App\Http\Requests;
 use App\Http\Requests\CreateQuizAnswersRequest;
 use App\Question;
+use App\UserLives;
+use App\QuestionUser;
+use App\Plan;
+use App\Test;
+use App\TestUser;
+use App\Level;
 use Auth;
 use App\Skill;
 use DateTime;
 use DB;
+use Illuminate\Support\Facades\Log;
 
 class AnswerController extends Controller
 {
-    public function __construct(){
-        $currentuser =  \App\User::whereId(3)->first();
-                \Auth::login($currentuser);
+    protected $user;
+
+    public function __construct()
+    {
+        $this->middleware(function ($request, $next) {
+            $this->user = Auth::guard('sanctum')->user();
+            return $next($request);
+        });
+    }
+
+    public function answer(CreateQuizAnswersRequest $request)
+    {
+        $user = Auth::guard('sanctum')->user();
+        $currentLives = $user->lives()->first();
+        $testId = $request->input('test');
+        $test = Test::find($testId);
+        $submittedAnswers = $request->input('answer');
+        $submittedIds = $request->input('question_id');
+
+        // Step 1: Validate test ownership
+         $pivot = TestUser::where('test_id', $testId)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if (!$pivot) {
+            return response()->json(['code' => 403, 'message' => 'Test not assigned to this user.']);
+        }
+
+        // Step 2: Early exit if test already completed
+        if ($pivot->test_completed || $test->completed) {
+            return response()->json([
+                'code' => 206,
+                'kudos' => $test->kudos_earned,
+                'maxile' => (float) $user->maxile_level,
+                'completed' => true,
+                'percentage' => (float) $test->test_score, 
+                    'name' => $user->firstname,
+                'message' => 'Test previously completed.',
+                'lives' => $user->lives,
+            ]);
+        }
+        // Step 3: Fetch user plan and lives info
+        if (!$user->hasLivesRemaining()) {
+            return response()->json([
+                'message' => 'No lives remaining. Please wait or upgrade.',
+                'code' => 403
+            ]);
+        }
+
+        // Step 4: Process submitted answers in transaction
+        DB::beginTransaction();
+
+        try {
+            $kudosEarned = 0;
+            $livesLost = 0;
+
+            foreach ($submittedIds as $questionId) {
+
+                $userAnswers = $submittedAnswers[$questionId] ?? null;
+
+                if ($userAnswers === null) {
+                    continue; // skip if not found
+                }
+
+                $questionUser = QuestionUser::where('test_id', $testId)
+                    ->where('question_id', $questionId)
+                    ->where('user_id', $user->id)
+                    ->first();
+
+                if (!$questionUser) {
+                    DB::rollBack();
+                    return response()->json([
+                        'code' => 403,
+                        'message' => "Question $questionId not assigned to this user."
+                    ], 403);
+                }
+
+                $question = $questionUser->question;
+
+                $correct = $question->correctness($user, $userAnswers);
+
+                $kudosEarned += $correct ? ($question->difficulty_id + 1) : 1;
+
+                $question->answered($user, $correct, $test);
+
+             // Handle Lives
+                if (!$correct) {
+                    $user->livesTransactions()->create([
+                        'amount' => -1,
+                        'reason' => 'incorrect_answer',
+                        'created_at' => now('UTC'),
+                        'updated_at' => now('UTC')
+                    ]);
+
+                $currentLives = $user->livesTransactions()->sum('amount');
+
+                }
+
+                $question->processProgressFor($user, $correct, $test);
+            }
+            // Step 5: Update test and user stats
+ 
+            $test->questions_answered += count($submittedAnswers);
+ 
+            $test->kudos_earned += $kudosEarned;
+
+            // Step 6: Check if test should be completed
+            $unansweredCount = QuestionUser::where('test_id', $test->id)
+                ->where('user_id', $user->id)
+                ->whereNull('answered_date')
+                ->count();
+
+            if ($unansweredCount === 0) {
+                $test->completed = TRUE;
+
+                $totalQuestions = QuestionUser::where('test_id', $test->id)
+                    ->where('user_id', $user->id)
+                    ->count();
+
+                $correctAnswers = QuestionUser::where('test_id', $test->id)
+                    ->where('user_id', $user->id)
+                    ->where('correct', true)
+                    ->count();
+                $score = $totalQuestions > 0
+                    ? round(($correctAnswers / $totalQuestions) * 100, 2)
+                    : 0;
+
+                $test->test_score = $score;
+                $test->save();
+                $user->save();
+                $test->testee()->updateExistingPivot($user->id, [ 
+                    'test_completed' => true,
+                    'completed_date' => now(),
+                    'result' => $score,
+                    'kudos' => $test->kudos_earned ?? $test->kudos // fallback
+                    ]);
+                $level = \App\Level::where('start_maxile_level', '<=', $user->maxile_level)
+                    ->where('end_maxile_level', '>', $user->maxile_level)
+                    ->first();
+
+                $encouragements = $level && $level->encouragements
+                    ? explode('|', $level->encouragements)
+                    : ['Keep going!', 'Good effort!'];
+
+                $encouragement = $encouragements[array_rand($encouragements)];
+
+                DB::commit();
+                return response()->json([
+                    'code' => 206,
+                    'encouragement' => $encouragement,
+                    'kudos' => $test->kudos_earned,
+                    'maxile' => (float) $user->maxile_level,
+                    'completed' => true,
+                    'percentage' => $test->test_score, 
+                    'name' => $user->firstname,
+                    'lives'=> $user->lives,
+                ]);
+            }
+
+            DB::commit();
+
+            return $test->buildResponseFor($user);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Answer processing failed: ' . $e->getMessage());
+            return response()->json(['message' => 'Internal error', 'code' => 500]);
+        }
     }
 
     public function checkQuiz(CreateQuizAnswersRequest $request){
@@ -66,14 +238,14 @@ class AnswerController extends Controller
     	$maxilepSkill = $maxilepTrack/count($track->skills);
     	$maxilepDifficulties = $maxilepSkill/$noOfDifficulties;
     	if ($skill->users()->whereTrackId($track->id)->whereUserId($user->id)) { 
-    		$skill_record =$skill->users()->whereTrackId($track->id)->whereUserId($user->id)->select('difficulty_id', 'maxile','noOfTries','noOfPasses')->first();
+    		$skill_record =$skill->users()->whereTrackId($track->id)->whereUserId($user->id)->select('difficulty_id', 'maxile','noOfTries','pass_streak')->first();
     		}
     	if ($skill_record){
 	    	$record =['noOfTries'=> $skill_record->noOfTries + 1,
-		    		  'noOfPasses' => $skill_record->noOfPasses + 1,
+		    		  'pass_streak' => $skill_record->pass_streak + 1,
 		    		  'track_id' => $track->id,
 		    		  'skill_test_date' => new DateTime('today')];
-	    	if ($skill_record->noOfPasses >= 2) {
+	    	if ($skill_record->pass_streak >= 2) {
 	    		//difficulty passed
 	    		if ($difficulty->id == $noOfDifficulties) { 	
 	    		//skill passed
@@ -106,7 +278,7 @@ class AnswerController extends Controller
 		    $skill->users()->updateExistingPivot(Auth::user()->id, $record);  // update current log
 		}
     	else{ 
-    		$record = ['noOfPasses' => 1,
+    		$record = ['pass_streak' => 1,
     				   'difficulty_id' =>$difficulty->id,
   		    		   'track_id' => $track->id,
      				   'noOfTries' =>1];
@@ -126,14 +298,14 @@ class AnswerController extends Controller
     	$maxilepTrack = 100/count($level->tracks);
     	$maxilepSkill = $maxilepTrack/count($track->skills);
     	$maxilepDifficulties = $maxilepSkill/$noOfDifficulties;
-    	$skill_record = $skill->users()->whereTrackId($track->id)->whereUserId($user->id)->whereDifficultyId($difficulty->id) ? $skill->users()->whereUserId($user->id)->whereDifficultyId($difficulty->id)->select('maxile','noOfTries','noOfPasses')->first() : null;
+    	$skill_record = $skill->users()->whereTrackId($track->id)->whereUserId($user->id)->whereDifficultyId($difficulty->id) ? $skill->users()->whereUserId($user->id)->whereDifficultyId($difficulty->id)->select('maxile','noOfTries','pass_streak')->first() : null;
     	if ($skill_record){
 	    	$record =['noOfTries'=> $skill_record->noOfTries + 1,
-		    		  'noOfFails' => $skill_record->noOfFails + 1,
+		    		  'fail_streak' => $skill_record->fail_streak + 1,
 		    		  'track_id' => $track->id,
 		    		  'skill_test_date' => new DateTime('today'),
-		    		  'noOfPasses' => 0];
-	    	if ($skill_record->noOfFails >= 3) {								//difficulty failed
+		    		  'pass_streak' => 0];
+	    	if ($skill_record->fail_streak >= 3) {								//difficulty failed
 	    		if ($skill_record->difficulty_passed){
 	    			$record['maxile'] = max($skill_record->maxile - $maxilepDifficulties, 0);
 	    		}
@@ -153,7 +325,7 @@ class AnswerController extends Controller
 		    $skill->users()->updateExistingPivot($user->id, $record);  // update current log
 		}
     	else{ 
-    		$record = ['noOfFails' => 1,
+    		$record = ['fail_streak' => 1,
     				   'difficulty_id' =>$difficulty->id,
   		    		   'track_id' => $track->id,
      				   'noOfTries' =>1,

@@ -19,8 +19,18 @@ class FieldTrackQuestionController extends Controller
   public function index(Track $track)
   {
       $user = Auth::guard('sanctum')->user();
+
+      // 1. Check if user has any lives remaining
+      if (!$user->hasLivesRemaining()) {
+        return response()->json([
+            'message' => 'No lives remaining. Please wait or upgrade.',
+            'code' => 403
+        ]);
+      }
+
       $test = $this->getOrCreateTest($user, $track);
 
+      // 2. Determine which questions to exclude
       $existingQuestions = $test->questions;
       $correctQuestions = $user->correctquestions()
           ->whereIn('skill_id', $track->skills()->pluck('id'))
@@ -28,11 +38,14 @@ class FieldTrackQuestionController extends Controller
 
       $excludedIds = $existingQuestions->pluck('id')->merge($correctQuestions)->unique();
 
+      // 3. Get all available questions in the track
       $allTrackQuestions = Question::whereIn('skill_id', $track->skills()->pluck('id'))->get();
 
+      // 4. Calculate how many more questions are needed for the test
       $questionsNeeded = Config::get('app.questions_per_test') - $existingQuestions->count();
       $additional = collect();
 
+      // 5. Add more questions from the same track, avoiding duplicates
       if ($questionsNeeded > 0) {
           $moreTrackQuestions = $allTrackQuestions
               ->filter(fn($q) => !$excludedIds->contains($q->id))
@@ -41,6 +54,7 @@ class FieldTrackQuestionController extends Controller
           $questionsNeeded -= $moreTrackQuestions->count();
       }
 
+      // 6. Still not enough? Get from same level
       if ($questionsNeeded > 0) {
           $sameLevelQuestions = Question::whereHas('skill.tracks', fn($q) =>
                   $q->where('level_id', $track->level_id))
@@ -51,10 +65,13 @@ class FieldTrackQuestionController extends Controller
           $additional = $additional->merge($sameLevelQuestions);
       }
 
+
       foreach ($additional as $q) {
+      // 7. Assign these questions to the $test
           $q->assigned($user, $test);
       }
 
+      // 8. Retrieve unanswered questions for the current test
       $unanswered = Question::whereHas('users', fn($q) =>
               $q->where('question_user.test_id', $test->id)
                 ->where('question_user.user_id', $user->id)
@@ -62,22 +79,9 @@ class FieldTrackQuestionController extends Controller
           ->with('skill.tracks.level')
           ->get();
 
-      $toSend = $unanswered->take(Config::get('app.questions_per_quiz'))->map(function ($q) {
-          $q->skill;
-          $track = $q->skill->tracks()->first();
-          $q->level = $track?->level?->name ?? '';
-          return $q;
-      });
 
-      $doneNess = $user->tracks()->where('tracks.id', $track->id)->first()?->pivot->doneNess ?? 0;
-
-      return response()->json([
-          'message' => 'Request executed successfully',
-          'test' => $test->id,
-          'questions' => $toSend,
-          'track_doneness' => $doneNess,
-          'code' => 201
-      ]);
+      // 9. Prepare questions to send
+    return $test->buildResponseFor($user);
   }
 
 

@@ -46,7 +46,7 @@ return [
     'number_to_fail' =>2,
     'tracks_to_test'=>3,
     'questions_per_quiz' =>5,
-    'questions_per_test' => 21,
+    'questions_per_test' => 20,
 
     /*
     |--------------------------------------------------------------------------
